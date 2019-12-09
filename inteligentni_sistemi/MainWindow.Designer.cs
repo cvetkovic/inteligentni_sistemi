@@ -129,10 +129,13 @@
             // 
             // canvas
             // 
+            this.canvas.BackColor = System.Drawing.SystemColors.GradientActiveCaption;
             this.canvas.Location = new System.Drawing.Point(12, 12);
             this.canvas.Name = "canvas";
             this.canvas.Size = new System.Drawing.Size(600, 600);
             this.canvas.TabIndex = 1;
+            this.canvas.Paint += new System.Windows.Forms.PaintEventHandler(this.Canvas_Paint);
+            this.canvas.MouseMove += new System.Windows.Forms.MouseEventHandler(this.Canvas_MouseMove);
             // 
             // groupBox2
             // 
@@ -294,15 +297,26 @@
             // tableSizeY
             // 
             this.tableSizeY.Location = new System.Drawing.Point(237, 32);
+            this.tableSizeY.Maximum = new decimal(new int[] {
+            15,
+            0,
+            0,
+            0});
+            this.tableSizeY.Minimum = new decimal(new int[] {
+            2,
+            0,
+            0,
+            0});
             this.tableSizeY.Name = "tableSizeY";
             this.tableSizeY.Size = new System.Drawing.Size(95, 22);
             this.tableSizeY.TabIndex = 6;
             this.tableSizeY.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.tableSizeY.Value = new decimal(new int[] {
-            5,
+            3,
             0,
             0,
             0});
+            this.tableSizeY.ValueChanged += new System.EventHandler(this.TableSize_ValueChanged);
             // 
             // label5
             // 
@@ -316,15 +330,26 @@
             // tableSizeX
             // 
             this.tableSizeX.Location = new System.Drawing.Point(116, 32);
+            this.tableSizeX.Maximum = new decimal(new int[] {
+            15,
+            0,
+            0,
+            0});
+            this.tableSizeX.Minimum = new decimal(new int[] {
+            2,
+            0,
+            0,
+            0});
             this.tableSizeX.Name = "tableSizeX";
             this.tableSizeX.Size = new System.Drawing.Size(95, 22);
             this.tableSizeX.TabIndex = 4;
             this.tableSizeX.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.tableSizeX.Value = new decimal(new int[] {
-            5,
+            4,
             0,
             0,
             0});
+            this.tableSizeX.ValueChanged += new System.EventHandler(this.TableSize_ValueChanged);
             // 
             // label4
             // 
