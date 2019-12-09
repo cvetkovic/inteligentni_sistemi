@@ -135,6 +135,7 @@
             this.canvas.Size = new System.Drawing.Size(600, 600);
             this.canvas.TabIndex = 1;
             this.canvas.Paint += new System.Windows.Forms.PaintEventHandler(this.Canvas_Paint);
+            this.canvas.MouseClick += new System.Windows.Forms.MouseEventHandler(this.Canvas_MouseClick);
             this.canvas.MouseMove += new System.Windows.Forms.MouseEventHandler(this.Canvas_MouseMove);
             // 
             // groupBox2

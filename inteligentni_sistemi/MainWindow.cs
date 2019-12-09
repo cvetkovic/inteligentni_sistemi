@@ -150,12 +150,12 @@ namespace etf.dotsandboxes.cl160127d
             circleCenters.Clear();
             g.Clear(Color.SkyBlue);
 
+            if (mouseHoverLine != null)
+                g.DrawLine(Pens.Black, mouseHoverLine.From, mouseHoverLine.To);
+
             // drawing existing connections
-            /*for (int i = 0; i < existingCanvasLines.Count; i++)
-            {
-                Rectangle r = new Rectangle();
-                g.FillRectangle(existingLineBrush, r);
-            }*/
+            for (int i = 0; i < existingCanvasLines.Count; i++)
+                g.DrawLine(Pens.Black, existingCanvasLines[i].From, existingCanvasLines[i].To);
 
             // drawing circles
             for (int i = 0; i < currentGame.TableSizeX; i++)        // for each row
@@ -208,6 +208,7 @@ namespace etf.dotsandboxes.cl160127d
             if (min != null)
             {
                 Point minPoint = (Point)(((DictionaryEntry)min).Value);
+                Point? coordinateTo = null;
 
                 if ((Math.Abs(e.X - minPoint.X) <= (horizontalSpacingBetweenCircles + circleDiameter) / 2) &&
                     (Math.Abs(e.Y - minPoint.Y) <= (verticalSpacingBetweenCircles + circleDiameter) / 2))
@@ -215,112 +216,82 @@ namespace etf.dotsandboxes.cl160127d
                     Tuple<int, int> coordinatesFrom = (Tuple<int, int>)((DictionaryEntry)min).Key;
                     Debug.WriteLine("min coordinates (" + coordinatesFrom.Item1 + ", " + coordinatesFrom.Item2 + ")");
 
-                    Point? coordinateTo = null;
                     int dx = 0, dy = 0;
+                    bool valid = false;
 
-                    if (e.X < minPoint.X)
+                    if ((e.Y > (minPoint.Y - verticalSpacingBetweenCircles / 2)) && (e.Y < minPoint.Y) &&
+                        (Math.Abs(e.X - minPoint.X) <= 10))
                     {
-                        // left border check
-                        if (coordinatesFrom.Item2 <= 0)
+                        // up
+                        if (coordinatesFrom.Item1 != 0)
                         {
-                            coordinateTo = null;
-                            return;
-                        }
-                        else
-                        {
-                            Debug.WriteLine("LEFT");
-
+                            valid = true;
                             dx = -1;
-
-                            if (e.Y < minPoint.Y)
-                            {
-                                // upper border check
-                                if (coordinatesFrom.Item1 <= 0)
-                                {
-                                    coordinateTo = null;
-                                    return;
-                                }
-                                else
-                                {
-                                    Debug.WriteLine("UP");
-
-                                    dy = -1;
-                                }
-                            }
-                            else if (e.Y > minPoint.Y)
-                            {
-                                // bottom border check
-                                if (coordinatesFrom.Item1 >= currentGame.TableSizeX - 1)
-                                {
-                                    coordinateTo = null;
-                                    return;
-                                }
-                                else
-                                {
-                                    Debug.WriteLine("DOWN");
-
-                                    dy = +1;
-                                }
-                            }
                         }
                     }
-                    else if (e.X > minPoint.X)
+                    else if ((e.Y > minPoint.Y) && (e.Y < (minPoint.Y + verticalSpacingBetweenCircles / 2)) &&
+                        (Math.Abs(e.X - minPoint.X) <= 10))
                     {
-                        // right border check
-                        if (coordinatesFrom.Item2 >= currentGame.TableSizeY - 1)
+                        // down
+                        if (coordinatesFrom.Item1 != currentGame.TableSizeX - 1)
                         {
-                            coordinateTo = null;
-                            return;
-                        }
-                        else
-                        {
-                            Debug.WriteLine("RIGHT");
-
+                            valid = true;
                             dx = 1;
-
-                            if (e.Y < minPoint.Y)
-                            {
-                                // upper border check
-                                if (coordinatesFrom.Item1 <= 0)
-                                {
-                                    coordinateTo = null;
-                                    return;
-                                }
-                                else
-                                {
-                                    Debug.WriteLine("UP");
-
-                                    dy = -1;
-                                }
-                            }
-                            else if (e.Y > minPoint.Y)
-                            {
-                                // bottom border check
-                                if (coordinatesFrom.Item1 >= currentGame.TableSizeX - 1)
-                                {
-                                    coordinateTo = null;
-                                    return;
-                                }
-                                else
-                                {
-                                    Debug.WriteLine("DOWN");
-
-                                    dy = +1;
-                                }
-                            }
+                        }
+                    }
+                    else if ((e.X > (minPoint.X - horizontalSpacingBetweenCircles / 2)) && (e.X < minPoint.X) &&
+                        (Math.Abs(e.Y - minPoint.Y) <= 10))
+                    {
+                        // left
+                        if (coordinatesFrom.Item2 != 0)
+                        {
+                            valid = true;
+                            dy = -1;
+                        }
+                    }
+                    else if ((e.X > minPoint.X) && (e.X < (minPoint.X + horizontalSpacingBetweenCircles / 2)) &&
+                        (Math.Abs(e.Y - minPoint.Y) <= 10))
+                    {
+                        // right
+                        if (coordinatesFrom.Item2 != currentGame.TableSizeY - 1)
+                        {
+                            valid = true;
+                            dy = 1;
                         }
                     }
 
-                    Tuple<int, int> lookingFor = new Tuple<int, int>(coordinatesFrom.Item1 + dx, coordinatesFrom.Item2 + dy);
-                    coordinateTo = (Point)circleCenters[lookingFor];
-
-                    if (coordinateTo == null)
-                        mouseHoverLine = null;
-                    else
+                    if (valid)
                     {
+                        Tuple<int, int> lookingFor = new Tuple<int, int>(coordinatesFrom.Item1 + dx, coordinatesFrom.Item2 + dy);
 
+                        Debug.WriteLine("Looking for (" + (coordinatesFrom.Item1 + dx) + ", " + (coordinatesFrom.Item2 + dy) + ")");
+
+                        if (circleCenters[lookingFor] != null)
+                        {
+                            coordinateTo = (Point)circleCenters[lookingFor];
+
+                            LineBetweenCircles line = new LineBetweenCircles();
+                            line.From = minPoint;
+                            line.To = (Point)coordinateTo;
+
+                            if (mouseHoverLine != null && mouseHoverLine.From == line.From && mouseHoverLine.To == line.To)
+                                return;
+                            else {
+                                mouseHoverLine = line;
+                                canvas.Refresh();
+                            }
+                        }
                     }
                 }
+            }
+        }
+
+        private void Canvas_MouseClick(object sender, MouseEventArgs e)
+        {
+            if (mouseHoverLine != null)
+            {
+                // TODO: check here if not already added
+                existingCanvasLines.Add(mouseHoverLine);
             }
         }
     }
