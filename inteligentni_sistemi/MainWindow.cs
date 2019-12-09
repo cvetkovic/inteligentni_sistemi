@@ -13,6 +13,7 @@ namespace etf.dotsandboxes.cl160127d
 {
     public partial class MainWindow : Form
     {
+
         #region Internal Class Structures
 
         private enum PLAYER : int
@@ -55,6 +56,9 @@ namespace etf.dotsandboxes.cl160127d
         {
             public Point From { get; set; }
             public Point To { get; set; }
+
+            public Tuple<int,int> CoordinateFrom { get; set; }
+            public Tuple<int,int> CoordinateTo { get; set; }
         }
 
         #endregion
@@ -71,6 +75,14 @@ namespace etf.dotsandboxes.cl160127d
         private int horizontalSpacingBetweenCircles = 93;
         private int verticalSpacingBetweenCircles = 77;
         private int circleDiameter = 25;
+        private const int LINE_WIDTH = 8;
+
+        private CurrentGame currentGame;
+        private LineBetweenCircles mouseHoverLine;
+
+        private List<LineBetweenCircles> existingCanvasLines = new List<LineBetweenCircles>();
+
+        private Hashtable circleCenters = new Hashtable();
 
         #endregion
 
@@ -132,30 +144,22 @@ namespace etf.dotsandboxes.cl160127d
             verticalSpacingBetweenCircles = (canvas.Height - currentGame.TableSizeX * circleDiameter) / (currentGame.TableSizeX + 1);
         }
 
-        #endregion
-
-        private CurrentGame currentGame;
-        private LineBetweenCircles mouseHoverLine;
-
-        private List<LineBetweenCircles> existingCanvasLines = new List<LineBetweenCircles>();
-
-        private Hashtable circleCenters = new Hashtable();
-
         private void Canvas_Paint(object sender, PaintEventArgs e)
         {
             Graphics g = e.Graphics;
             Brush circleBrush = Brushes.White;
-            Brush existingLineBrush = Brushes.Black;
+            Pen existingLinePen = new Pen(Brushes.Black, LINE_WIDTH);
+            Pen hoverLine = new Pen(Brushes.Gray, LINE_WIDTH);
 
             circleCenters.Clear();
             g.Clear(Color.SkyBlue);
 
             if (mouseHoverLine != null)
-                g.DrawLine(Pens.Black, mouseHoverLine.From, mouseHoverLine.To);
+                g.DrawLine(hoverLine, mouseHoverLine.From, mouseHoverLine.To);
 
             // drawing existing connections
             for (int i = 0; i < existingCanvasLines.Count; i++)
-                g.DrawLine(Pens.Black, existingCanvasLines[i].From, existingCanvasLines[i].To);
+                g.DrawLine(existingLinePen, existingCanvasLines[i].From, existingCanvasLines[i].To);
 
             // drawing circles
             for (int i = 0; i < currentGame.TableSizeX; i++)        // for each row
@@ -188,7 +192,6 @@ namespace etf.dotsandboxes.cl160127d
             canvas.Refresh();
         }
 
-
         private void Canvas_MouseMove(object sender, MouseEventArgs e)
         {
             object min = null;
@@ -219,8 +222,8 @@ namespace etf.dotsandboxes.cl160127d
                     int dx = 0, dy = 0;
                     bool valid = false;
 
-                    if ((e.Y > (minPoint.Y - verticalSpacingBetweenCircles / 2)) && (e.Y < minPoint.Y) &&
-                        (Math.Abs(e.X - minPoint.X) <= 10))
+                    if ((e.Y >= (minPoint.Y - verticalSpacingBetweenCircles / 2 - circleDiameter / 2)) && (e.Y < minPoint.Y - circleDiameter / 2) &&
+                        (Math.Abs(e.X - minPoint.X) <= LINE_WIDTH))
                     {
                         // up
                         if (coordinatesFrom.Item1 != 0)
@@ -229,8 +232,8 @@ namespace etf.dotsandboxes.cl160127d
                             dx = -1;
                         }
                     }
-                    else if ((e.Y > minPoint.Y) && (e.Y < (minPoint.Y + verticalSpacingBetweenCircles / 2)) &&
-                        (Math.Abs(e.X - minPoint.X) <= 10))
+                    else if ((e.Y >= minPoint.Y + circleDiameter / 2) && (e.Y < (minPoint.Y + verticalSpacingBetweenCircles / 2 + circleDiameter / 2)) &&
+                        (Math.Abs(e.X - minPoint.X) <= LINE_WIDTH))
                     {
                         // down
                         if (coordinatesFrom.Item1 != currentGame.TableSizeX - 1)
@@ -239,8 +242,8 @@ namespace etf.dotsandboxes.cl160127d
                             dx = 1;
                         }
                     }
-                    else if ((e.X > (minPoint.X - horizontalSpacingBetweenCircles / 2)) && (e.X < minPoint.X) &&
-                        (Math.Abs(e.Y - minPoint.Y) <= 10))
+                    else if ((e.X >= (minPoint.X - horizontalSpacingBetweenCircles / 2 - circleDiameter / 2)) && (e.X < minPoint.X - circleDiameter / 2) &&
+                        (Math.Abs(e.Y - minPoint.Y) <= LINE_WIDTH))
                     {
                         // left
                         if (coordinatesFrom.Item2 != 0)
@@ -249,8 +252,8 @@ namespace etf.dotsandboxes.cl160127d
                             dy = -1;
                         }
                     }
-                    else if ((e.X > minPoint.X) && (e.X < (minPoint.X + horizontalSpacingBetweenCircles / 2)) &&
-                        (Math.Abs(e.Y - minPoint.Y) <= 10))
+                    else if ((e.X >= minPoint.X + circleDiameter / 2) && (e.X < (minPoint.X + horizontalSpacingBetweenCircles / 2 + circleDiameter / 2)) &&
+                        (Math.Abs(e.Y - minPoint.Y) <= LINE_WIDTH))
                     {
                         // right
                         if (coordinatesFrom.Item2 != currentGame.TableSizeY - 1)
@@ -259,6 +262,8 @@ namespace etf.dotsandboxes.cl160127d
                             dy = 1;
                         }
                     }
+                    else
+                        valid = false;
 
                     if (valid)
                     {
@@ -273,13 +278,25 @@ namespace etf.dotsandboxes.cl160127d
                             LineBetweenCircles line = new LineBetweenCircles();
                             line.From = minPoint;
                             line.To = (Point)coordinateTo;
+                            line.CoordinateFrom = coordinatesFrom;
+                            line.CoordinateTo = lookingFor;
 
                             if (mouseHoverLine != null && mouseHoverLine.From == line.From && mouseHoverLine.To == line.To)
                                 return;
-                            else {
+                            else
+                            {
                                 mouseHoverLine = line;
                                 canvas.Refresh();
                             }
+                        }
+                    }
+                    else
+                    {
+                        // if introduced to reduce canvas refreshing
+                        if (mouseHoverLine != null)
+                        {
+                            mouseHoverLine = null;
+                            canvas.Refresh();
                         }
                     }
                 }
@@ -294,5 +311,14 @@ namespace etf.dotsandboxes.cl160127d
                 existingCanvasLines.Add(mouseHoverLine);
             }
         }
+
+        #endregion
+
+        #region Artificial Intelligence
+
+
+
+        #endregion
+
     }
 }
