@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Diagnostics;
 using System.Drawing;
-using System.Linq;
-using System.Text;
+using System.IO;
 using System.Windows.Forms;
 
 namespace etf.dotsandboxes.cl160127d
@@ -20,24 +17,6 @@ namespace etf.dotsandboxes.cl160127d
         {
             BLUE = 0,
             RED = 1
-        }
-
-        private class GameTurn
-        {
-            PLAYER player;
-            string field;
-
-            public PLAYER Player
-            {
-                get { return player; }
-                set { player = value; }
-            }
-
-            public String Field
-            {
-                get { return field; }
-                set { field = value; }
-            }
         }
 
         private class CurrentGame
@@ -61,6 +40,8 @@ namespace etf.dotsandboxes.cl160127d
 
             public VTuple<int, int> CoordinateFrom { get; set; }
             public VTuple<int, int> CoordinateTo { get; set; }
+
+            public PLAYER WhoDrew { get; set; }
         }
 
         private class Box
@@ -84,7 +65,6 @@ namespace etf.dotsandboxes.cl160127d
 
         private PLAYER turn;
         private int[] score = new int[2];
-        private List<GameTurn> gameTurnsList = new List<GameTurn>();
 
         private int horizontalSpacingBetweenCircles = 93;
         private int verticalSpacingBetweenCircles = 77;
@@ -117,6 +97,35 @@ namespace etf.dotsandboxes.cl160127d
 
         #region GUI
 
+        private void SaveGameState_Click(object sender, EventArgs e)
+        {
+            SaveFileDialog saveFileDialog = new SaveFileDialog();
+
+            saveFileDialog.Filter = "Gamesave (*.gs) | *.gs";
+            saveFileDialog.Title = "Čuvanje stanje igre";
+
+            if (saveFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                SaveGameState(saveFileDialog.FileName);
+                MessageBox.Show("Igra je uspešno sačuvana.");
+            }
+        }
+
+        private void LoadGameState_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+
+            openFileDialog.Filter = "Gamesave (*.gs) | *.gs";
+            openFileDialog.Multiselect = false;
+            openFileDialog.Title = "Učitavanje stanje igre";
+
+            if (openFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                LoadGameState(openFileDialog.FileName);
+                MessageBox.Show("Igra je uspešno učitana.");
+            }
+        }
+
         public void UpdateGUI()
         {
             if (currentGame.GameOver)
@@ -126,20 +135,6 @@ namespace etf.dotsandboxes.cl160127d
             redTurnIndicator.Visible = (turn == PLAYER.RED);
 
             scoreLabel.Text = score[(int)PLAYER.BLUE] + " : " + score[(int)PLAYER.RED];
-
-            turnRichTextBox.Clear();
-            int currentPosition = 0;
-            foreach (GameTurn t in gameTurnsList)
-            {
-                String textToAppend = t.Field + t.Player + Environment.NewLine;
-                int length = textToAppend.Length;
-
-                turnRichTextBox.AppendText(textToAppend);
-
-                turnRichTextBox.SelectionStart = currentPosition;
-                turnRichTextBox.SelectionLength = length;
-                turnRichTextBox.SelectionColor = (t.Player == PLAYER.BLUE ? Color.Blue : Color.Red);
-            }
         }
 
         private void GUI_GameSettingChanged(object sender, EventArgs e)
@@ -288,6 +283,7 @@ namespace etf.dotsandboxes.cl160127d
                             line.To = (Point)coordinateTo;
                             line.CoordinateFrom = coordinatesFrom;
                             line.CoordinateTo = lookingFor;
+                            line.WhoDrew = turn;
 
                             if (mouseHoverLine != null && mouseHoverLine.From == line.From && mouseHoverLine.To == line.To)
                                 return;
@@ -318,6 +314,19 @@ namespace etf.dotsandboxes.cl160127d
                 // TODO: MANDATORY CHECK -------------> if not already added
                 existingCanvasLines.Add(mouseHoverLine);
 
+                ///////////////////////////////////
+                string log = GenerateLogMessage(mouseHoverLine);
+
+                int startPosition = turnRichTextBox.Text.Length;
+                string textToAppend = log + Environment.NewLine;
+
+                turnRichTextBox.AppendText(textToAppend);
+                turnRichTextBox.SelectionStart = startPosition;
+                turnRichTextBox.SelectionLength = log.Length;
+                turnRichTextBox.SelectionColor = (turn == PLAYER.BLUE ? Color.Blue : Color.Red);
+                turnRichTextBox.ScrollToCaret();
+                ///////////////////////////////////
+
                 int numberOfNewBoxes = TryClosingBoxes(mouseHoverLine);
                 score[(int)turn] += numberOfNewBoxes;
 
@@ -329,13 +338,13 @@ namespace etf.dotsandboxes.cl160127d
                 mouseHoverLine = null;
 
                 if (boxes.Count == currentGame.TableSizeX * currentGame.TableSizeY / 2)
-                {
-                    MessageBox.Show("Igra je završena");
                     currentGame.GameOver = true;
-                }
 
                 // has to be below game over set true to enable GUI controls
                 UpdateGUI();
+
+                if (currentGame.GameOver)
+                    MessageBox.Show("Igra je završena");
             }
         }
 
@@ -345,7 +354,6 @@ namespace etf.dotsandboxes.cl160127d
 
             turn = PLAYER.BLUE;
             score[0] = score[1] = 0;
-            gameTurnsList.Clear();
             mouseHoverLine = null;
             existingCanvasLines.Clear();
             boxes.Clear();
@@ -684,6 +692,45 @@ namespace etf.dotsandboxes.cl160127d
                 throw new Exception("Diagonal connections now allowed.");
 
             return createdBoxes;
+        }
+
+        #endregion
+
+        #region Game State Load/Save
+
+        private char TranslateAxisToLetter(int coordinate)
+        {
+            return (char)(coordinate + 65);
+        }
+
+        private void SaveGameState(string location)
+        {
+            using (StreamWriter file = new StreamWriter(location))
+            {
+                // writing table size
+                file.WriteLine(String.Format("{0} {1}", currentGame.TableSizeX, currentGame.TableSizeY));
+
+                // writing moves
+                foreach (LineBetweenCircles line in existingCanvasLines)
+                    file.WriteLine(GenerateLogMessage(line));
+            }
+        }
+
+        private string GenerateLogMessage(LineBetweenCircles line)
+        {
+            string s = "";
+
+            if (line.From.X == line.To.X) // vertical line
+                s = string.Format("{0}{1}", TranslateAxisToLetter(line.CoordinateFrom.Item1 < line.CoordinateTo.Item1 ? line.CoordinateFrom.Item1 : line.CoordinateTo.Item1), (line.CoordinateFrom.Item2 < line.CoordinateTo.Item2 ? line.CoordinateFrom.Item2 : line.CoordinateTo.Item2));
+            else                        // horizontal line
+                s = string.Format("{0}{1}", (line.CoordinateFrom.Item1 < line.CoordinateTo.Item1 ? line.CoordinateFrom.Item1 : line.CoordinateTo.Item1), TranslateAxisToLetter(line.CoordinateFrom.Item2 < line.CoordinateTo.Item2 ? line.CoordinateFrom.Item2 : line.CoordinateTo.Item2)); 
+
+            return s;
+        }
+
+        private void LoadGameState(string location)
+        {
+
         }
 
         #endregion

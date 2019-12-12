@@ -221,6 +221,7 @@
             this.loadGameState.TabIndex = 14;
             this.loadGameState.Text = "Učitaj stanje igre...";
             this.loadGameState.UseVisualStyleBackColor = true;
+            this.loadGameState.Click += new System.EventHandler(this.LoadGameState_Click);
             // 
             // saveGameState
             // 
@@ -230,6 +231,7 @@
             this.saveGameState.TabIndex = 13;
             this.saveGameState.Text = "Sačuvaj stanje igre...";
             this.saveGameState.UseVisualStyleBackColor = true;
+            this.saveGameState.Click += new System.EventHandler(this.SaveGameState_Click);
             // 
             // aiDifficulty
             // 
