@@ -361,92 +361,130 @@ namespace etf.dotsandboxes.cl160127d
                 // close upper box if line is not on the upper edge
                 if (coordinateFromX != 0)
                 {
-                    bool upperLeft = false;
-                    bool upperUpper = false;
-                    bool upperRight = false;
 
-                    Box box = new Box();
-
-                    for (int i = 0; i < existingCanvasLines.Count; i++)
+                    for (int direction = 0; direction < 2; direction++)
                     {
-                        // looking for left and right
-                        if (coordinateFromY < coordinateToY)
+                        int dx = (direction == 0 ? -1 : 1); // check for clojure both above and below the line
+
+                        Box box = new Box();
+
+                        bool upperLeft = false;
+                        bool upperUpper = false;
+                        bool upperRight = false;
+
+                        for (int i = 0; i < existingCanvasLines.Count; i++)
                         {
-                            box.BottomLeft = line.From;
-                            box.BottomRight = line.To;
-
-                            // 'from' is left edge
-                            if (!upperLeft &&
-                                ((existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateFromX, coordinateFromY) && existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateFromX - 1, coordinateFromY)) || 
-                                (existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateFromX, coordinateFromY) && existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateFromX - 1, coordinateFromY))))
+                            // looking for left and right
+                            if (coordinateFromY < coordinateToY)
                             {
-                                upperLeft = true;
-                                box.Left = existingCanvasLines[i];
+                                if (direction == 0)
+                                {
+                                    box.BottomLeft = line.From;
+                                    box.BottomRight = line.To;
+                                }
+                                else
+                                {
+                                    box.TopLeft = line.From;
+                                    box.TopRight = line.To;
+                                }
+
+                                // 'from' is left edge
+                                if (!upperLeft &&
+                                    ((existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateFromX, coordinateFromY) && existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateFromX + dx, coordinateFromY)) ||
+                                    (existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateFromX, coordinateFromY) && existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateFromX + dx, coordinateFromY))))
+                                {
+                                    upperLeft = true;
+                                    box.Left = existingCanvasLines[i];
+                                }
+
+                                // 'to' is right edge
+                                if (!upperRight &&
+                                    ((existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateToX, coordinateToY) && existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateToX + dx, coordinateToY)) ||
+                                    (existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateToX, coordinateToY) && existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateToX + dx, coordinateToY))))
+                                {
+                                    upperRight = true;
+                                    box.Right = existingCanvasLines[i];
+                                }
+
+                                if (!upperUpper &&
+                                    ((existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateFromX + dx, coordinateFromY) && existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateFromX + dx, coordinateFromY + 1)) ||
+                                    (existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateFromX + dx, coordinateFromY) && existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateFromX + dx, coordinateFromY + 1))))
+                                {
+                                    upperUpper = true;
+                                    if (direction == 0)
+                                        box.Upper = existingCanvasLines[i];
+                                    else
+                                        box.Lower = existingCanvasLines[i];
+                                }
+                            }
+                            else
+                            {
+                                if (direction == 0)
+                                {
+                                    box.BottomLeft = line.To;
+                                    box.BottomRight = line.From;
+                                }
+                                else
+                                {
+                                    box.TopLeft = line.To;
+                                    box.TopRight = line.From;
+                                }
+
+                                // 'from' is right edge
+                                if (!upperRight &&
+                                    ((existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateFromX, coordinateFromY) && existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateFromX + dx, coordinateFromY)) ||
+                                    (existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateFromX, coordinateFromY) && existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateFromX + dx, coordinateFromY))))
+                                {
+                                    upperRight = true;
+                                    box.Right = existingCanvasLines[i];
+                                }
+
+                                // 'to' is left edge
+                                if (!upperLeft &&
+                                    ((existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateToX, coordinateToY) && existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateToX + dx, coordinateToY)) ||
+                                    (existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateToX, coordinateToY) && existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateToX + dx, coordinateToY))))
+                                {
+                                    upperLeft = true;
+                                    box.Left = existingCanvasLines[i];
+                                }
+
+                                if (!upperUpper &&
+                                    ((existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateToX + dx, coordinateToY) && existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateFromX + dx, coordinateFromY)) ||
+                                    (existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateToX + dx, coordinateToY) && existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateFromX + dx, coordinateFromY))))
+                                {
+                                    upperUpper = true;
+                                    if (direction == 0)
+                                        box.Upper = existingCanvasLines[i];
+                                    else
+                                        box.Lower = existingCanvasLines[i];
+                                }
                             }
 
-                            // 'to' is right edge
-                            if (!upperRight &&
-                                ((existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateToX, coordinateToY) && existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateToX - 1, coordinateToY)) ||
-                                (existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateToX, coordinateToY) && existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateToX - 1, coordinateToY))))
-                            {
-                                upperRight = true;
-                                box.Right = existingCanvasLines[i];
-                            }
-
-                            if (!upperUpper &&
-                                ((existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateFromX - 1, coordinateFromY) && existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateFromX - 1, coordinateFromY + 1)) ||
-                                (existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateFromX - 1, coordinateFromY) && existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateFromX - 1, coordinateFromY + 1))))
-                            {
-                                upperUpper = true;
-                                box.Upper = existingCanvasLines[i];
-                            }
+                            if (upperLeft && upperUpper && upperRight)
+                                break;
                         }
-                        else
-                        {
-                            box.BottomLeft = line.To;
-                            box.BottomRight = line.From;
 
-                            // 'from' is right edge
-                            if (!upperRight &&
-                                ((existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateFromX, coordinateFromY) && existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateFromX - 1, coordinateFromY)) ||
-                                (existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateFromX, coordinateFromY) && existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateFromX - 1, coordinateFromY))))
-                            {
-                                upperRight = true;
-                                box.Right = existingCanvasLines[i];
-                            }
-
-                            // 'to' is left edge
-                            if (!upperLeft &&
-                                ((existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateToX, coordinateToY) && existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateToX - 1, coordinateToY)) ||
-                                (existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateToX, coordinateToY) && existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateToX - 1, coordinateToY))))
-                            {
-                                upperLeft = true;
-                                box.Left = existingCanvasLines[i];
-                            }
-
-                            if (!upperUpper &&
-                                ((existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateToX - 1, coordinateToY) && existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateFromX - 1, coordinateFromY)) ||
-                                (existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateToX - 1, coordinateToY) && existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateFromX - 1, coordinateFromY))))
-                            {
-                                upperUpper = true;
-                                box.Upper = existingCanvasLines[i];
-                            }
-                        }
-
+                        // add to list of boxes
                         if (upperLeft && upperUpper && upperRight)
-                            break;
-                    }
+                        {
+                            box.ClosingPlayer = turn;
 
-                    // add to list of boxes
-                    if (upperLeft && upperUpper && upperRight)
-                    {
-                        box.Lower = line;
-                        box.ClosingPlayer = turn;
+                            if (direction == 0)
+                            {
+                                box.Lower = line;
 
-                        box.TopLeft = (box.Upper.From.X < box.Upper.To.X ? box.Upper.From : box.Upper.To);
-                        box.TopRight = (box.Upper.From.X > box.Upper.To.X ? box.Upper.From : box.Upper.To);
+                                box.TopLeft = (box.Upper.From.X < box.Upper.To.X ? box.Upper.From : box.Upper.To);
+                                box.TopRight = (box.Upper.From.X > box.Upper.To.X ? box.Upper.From : box.Upper.To);
+                            }
+                            else
+                            {
+                                box.Upper = line;
+                                box.BottomLeft = (box.Lower.From.X < box.Lower.To.X ? box.Lower.From : box.Lower.To);
+                                box.BottomRight = (box.Lower.From.X > box.Lower.To.X ? box.Lower.From : box.Lower.To);
+                            }
 
-                        boxes.Add(box);
+                            boxes.Add(box);
+                        }
                     }
                 }
 
