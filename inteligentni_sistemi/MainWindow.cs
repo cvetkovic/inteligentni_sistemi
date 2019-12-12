@@ -50,6 +50,8 @@ namespace etf.dotsandboxes.cl160127d
 
             public int TableSizeX { get; set; }
             public int TableSizeY { get; set; }
+
+            public bool GameOver { get; set; }
         }
 
         private class LineBetweenCircles
@@ -79,9 +81,6 @@ namespace etf.dotsandboxes.cl160127d
         #endregion
 
         #region Class Variables
-
-        private delegate void GameStateChanged();
-        private event GameStateChanged gameStateChangedEvent;
 
         private PLAYER turn;
         private int[] score = new int[2];
@@ -120,6 +119,9 @@ namespace etf.dotsandboxes.cl160127d
 
         public void UpdateGUI()
         {
+            if (currentGame.GameOver)
+                tableSizeX.Enabled = tableSizeY.Enabled = humanVsHumanRadio.Enabled = humanVsPcRadio.Enabled = pcVsPcRadio.Enabled = true;
+
             blueTurnIndicator.Visible = (turn == PLAYER.BLUE);
             redTurnIndicator.Visible = (turn == PLAYER.RED);
 
@@ -147,7 +149,6 @@ namespace etf.dotsandboxes.cl160127d
                 aiDifficulty.Enabled = false;
                 aiTreeDepth.Enabled = false;
                 aiMode.Enabled = false;
-
             }
             else if (humanVsPcRadio.Checked || pcVsPcRadio.Checked)
             {
@@ -197,23 +198,6 @@ namespace etf.dotsandboxes.cl160127d
                     g.FillEllipse(circleBrush, new Rectangle(new Point(xStart, yStart), new Size(circleDiameter, circleDiameter)));
                 }
             }
-        }
-
-        private void TableSize_ValueChanged(object sender, EventArgs e)
-        {
-            currentGame = new CurrentGame((int)tableSizeX.Value, (int)tableSizeY.Value);
-            GUI_GameSettingChanged(null, null);
-
-            if (tableSizeX.Value <= 4 && tableSizeY.Value <= 4)
-                circleDiameter = 35;
-            else if ((tableSizeX.Value > 4 && tableSizeY.Value > 4) && (tableSizeX.Value < 10 && tableSizeY.Value < 10))
-                circleDiameter = 25;
-            else if (tableSizeX.Value >= 10 && tableSizeY.Value >= 10)
-                circleDiameter = 15;
-            else
-                circleDiameter = 25;
-
-            canvas.Refresh();
         }
 
         private void Canvas_MouseMove(object sender, MouseEventArgs e)
@@ -329,26 +313,75 @@ namespace etf.dotsandboxes.cl160127d
 
         private void Canvas_MouseClick(object sender, MouseEventArgs e)
         {
-            if (mouseHoverLine != null)
+            if (mouseHoverLine != null && !currentGame.GameOver)
             {
                 // TODO: MANDATORY CHECK -------------> if not already added
                 existingCanvasLines.Add(mouseHoverLine);
-                TryClosingBoxes(mouseHoverLine);
 
-                // TODO: change game stats
-                //gameStateChangedEvent.Invoke();
+                int numberOfNewBoxes = TryClosingBoxes(mouseHoverLine);
+                score[(int)turn] += numberOfNewBoxes;
+
+                if (numberOfNewBoxes == 0)
+                    SwitchTurn();
+
                 canvas.Refresh();
 
                 mouseHoverLine = null;
+
+                if (boxes.Count == currentGame.TableSizeX * currentGame.TableSizeY / 2)
+                {
+                    MessageBox.Show("Igra je završena");
+                    currentGame.GameOver = true;
+                }
+
+                // has to be below game over set true to enable GUI controls
+                UpdateGUI();
             }
+        }
+
+        private void NewGame_Click(object sender, EventArgs e)
+        {
+            currentGame = new CurrentGame((int)tableSizeX.Value, (int)tableSizeY.Value);
+
+            turn = PLAYER.BLUE;
+            score[0] = score[1] = 0;
+            gameTurnsList.Clear();
+            mouseHoverLine = null;
+            existingCanvasLines.Clear();
+            boxes.Clear();
+            circleCenters.Clear();
+
+            GUI_GameSettingChanged(null, null);
+
+            if (tableSizeX.Value <= 4 && tableSizeY.Value <= 4)
+                circleDiameter = 35;
+            else if ((tableSizeX.Value > 4 && tableSizeY.Value > 4) && (tableSizeX.Value < 10 && tableSizeY.Value < 10))
+                circleDiameter = 25;
+            else if (tableSizeX.Value >= 10 && tableSizeY.Value >= 10)
+                circleDiameter = 15;
+            else
+                circleDiameter = 25;
+
+            UpdateGUI();
+            canvas.Refresh();
         }
 
         #endregion
 
         #region Game Logic
 
-        private void TryClosingBoxes(LineBetweenCircles line)
+        private void SwitchTurn()
         {
+            if (turn == PLAYER.BLUE)
+                turn = PLAYER.RED;
+            else
+                turn = PLAYER.BLUE;
+        }
+
+        private int TryClosingBoxes(LineBetweenCircles line)
+        {
+            int createdBoxes = 0;
+
             int coordinateFromX = line.CoordinateFrom.Item1;
             int coordinateFromY = line.CoordinateFrom.Item2;
             int coordinateToX = line.CoordinateTo.Item1;
@@ -499,6 +532,7 @@ namespace etf.dotsandboxes.cl160127d
                         }
 
                         boxes.Add(box);
+                        createdBoxes++;
                     }
                 }
             }
@@ -642,11 +676,14 @@ namespace etf.dotsandboxes.cl160127d
                         }
 
                         boxes.Add(box);
+                        createdBoxes++;
                     }
                 }
             }
             else
                 throw new Exception("Diagonal connections now allowed.");
+
+            return createdBoxes;
         }
 
         #endregion

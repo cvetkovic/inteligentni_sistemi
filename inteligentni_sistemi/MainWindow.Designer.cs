@@ -85,6 +85,7 @@
             this.redTurnIndicator.Size = new System.Drawing.Size(36, 17);
             this.redTurnIndicator.TabIndex = 4;
             this.redTurnIndicator.Text = "---->";
+            this.redTurnIndicator.Visible = false;
             // 
             // blueTurnIndicator
             // 
@@ -210,6 +211,7 @@
             this.newGame.TabIndex = 15;
             this.newGame.Text = "Nova igra";
             this.newGame.UseVisualStyleBackColor = true;
+            this.newGame.Click += new System.EventHandler(this.NewGame_Click);
             // 
             // loadGameState
             // 
@@ -254,6 +256,7 @@
             // pcVsPcRadio
             // 
             this.pcVsPcRadio.AutoSize = true;
+            this.pcVsPcRadio.Enabled = false;
             this.pcVsPcRadio.Location = new System.Drawing.Point(116, 114);
             this.pcVsPcRadio.Name = "pcVsPcRadio";
             this.pcVsPcRadio.Size = new System.Drawing.Size(145, 21);
@@ -265,12 +268,11 @@
             // humanVsPcRadio
             // 
             this.humanVsPcRadio.AutoSize = true;
-            this.humanVsPcRadio.Checked = true;
+            this.humanVsPcRadio.Enabled = false;
             this.humanVsPcRadio.Location = new System.Drawing.Point(116, 87);
             this.humanVsPcRadio.Name = "humanVsPcRadio";
             this.humanVsPcRadio.Size = new System.Drawing.Size(130, 21);
             this.humanVsPcRadio.TabIndex = 9;
-            this.humanVsPcRadio.TabStop = true;
             this.humanVsPcRadio.Text = "Čovek - računar";
             this.humanVsPcRadio.UseVisualStyleBackColor = true;
             this.humanVsPcRadio.CheckedChanged += new System.EventHandler(this.GUI_GameSettingChanged);
@@ -287,16 +289,20 @@
             // humanVsHumanRadio
             // 
             this.humanVsHumanRadio.AutoSize = true;
+            this.humanVsHumanRadio.Checked = true;
+            this.humanVsHumanRadio.Enabled = false;
             this.humanVsHumanRadio.Location = new System.Drawing.Point(116, 60);
             this.humanVsHumanRadio.Name = "humanVsHumanRadio";
             this.humanVsHumanRadio.Size = new System.Drawing.Size(118, 21);
             this.humanVsHumanRadio.TabIndex = 7;
+            this.humanVsHumanRadio.TabStop = true;
             this.humanVsHumanRadio.Text = "Čovek - čovek";
             this.humanVsHumanRadio.UseVisualStyleBackColor = true;
             this.humanVsHumanRadio.CheckedChanged += new System.EventHandler(this.GUI_GameSettingChanged);
             // 
             // tableSizeY
             // 
+            this.tableSizeY.Enabled = false;
             this.tableSizeY.Location = new System.Drawing.Point(237, 32);
             this.tableSizeY.Maximum = new decimal(new int[] {
             15,
@@ -317,7 +323,6 @@
             0,
             0,
             0});
-            this.tableSizeY.ValueChanged += new System.EventHandler(this.TableSize_ValueChanged);
             // 
             // label5
             // 
@@ -330,6 +335,7 @@
             // 
             // tableSizeX
             // 
+            this.tableSizeX.Enabled = false;
             this.tableSizeX.Location = new System.Drawing.Point(116, 32);
             this.tableSizeX.Maximum = new decimal(new int[] {
             15,
@@ -350,7 +356,6 @@
             0,
             0,
             0});
-            this.tableSizeX.ValueChanged += new System.EventHandler(this.TableSize_ValueChanged);
             // 
             // label4
             // 
