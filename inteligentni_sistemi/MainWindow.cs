@@ -1,4 +1,6 @@
-﻿using System;
+﻿using etf.dotsandboxes.cl160127d.AI;
+using etf.dotsandboxes.cl160127d.Game;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -11,73 +13,25 @@ namespace etf.dotsandboxes.cl160127d
     public partial class MainWindow : Form
     {
 
-        #region Internal Class Structures
-
-        private enum PLAYER : int
-        {
-            BLUE = 0,
-            RED = 1
-        }
-
-        private class CurrentGame
-        {
-            public CurrentGame(int tableSizeX, int tableSizeY)
-            {
-                TableSizeX = tableSizeX;
-                TableSizeY = tableSizeY;
-            }
-
-            public int TableSizeX { get; set; }
-            public int TableSizeY { get; set; }
-
-            public bool GameOver { get; set; }
-        }
-
-        private class LineBetweenCircles
-        {
-            public Point From { get; set; }
-            public Point To { get; set; }
-
-            public VTuple<int, int> CoordinateFrom { get; set; }
-            public VTuple<int, int> CoordinateTo { get; set; }
-
-            public PLAYER WhoDrew { get; set; }
-        }
-
-        private class Box
-        {
-            public LineBetweenCircles Upper { get; set; }
-            public LineBetweenCircles Lower { get; set; }
-            public LineBetweenCircles Left { get; set; }
-            public LineBetweenCircles Right { get; set; }
-
-            public PLAYER ClosingPlayer { get; set; }
-
-            public Point TopLeft { get; set; }
-            public Point TopRight { get; set; }
-            public Point BottomLeft { get; set; }
-            public Point BottomRight { get; set; }
-        }
-
-        #endregion
-
         #region Class Variables
 
-        private PLAYER turn;
-        private int[] score = new int[2];
-
+        // settings
         private int horizontalSpacingBetweenCircles = 93;
         private int verticalSpacingBetweenCircles = 77;
         private int circleDiameter = 25;
         private const int LINE_WIDTH = 8;
 
-        private CurrentGame currentGame;
+        // not game data structures
         private LineBetweenCircles mouseHoverLine;
 
-        private List<LineBetweenCircles> existingCanvasLines = new List<LineBetweenCircles>();
-        private List<Box> boxes = new List<Box>();
+        // game data structures
+        private CurrentGame currentGame;
 
         private Hashtable circleCenters = new Hashtable();
+        
+        private List<LineBetweenCircles> existingCanvasLines = new List<LineBetweenCircles>();
+        private List<LineBetweenCircles> nonExistingLines = new List<LineBetweenCircles>();
+        private List<Box> boxes = new List<Box>();
 
         #endregion
 
@@ -87,8 +41,6 @@ namespace etf.dotsandboxes.cl160127d
         {
             InitializeComponent();
 
-            turn = PLAYER.BLUE;
-            score[(int)PLAYER.BLUE] = score[(int)PLAYER.RED] = 0;
             currentGame = new CurrentGame((int)tableSizeX.Value, (int)tableSizeY.Value);
             GUI_GameSettingChanged(null, null);
         }
@@ -128,13 +80,12 @@ namespace etf.dotsandboxes.cl160127d
 
         public void UpdateGUI()
         {
-            if (currentGame.GameOver)
-                tableSizeX.Enabled = tableSizeY.Enabled = humanVsHumanRadio.Enabled = humanVsPcRadio.Enabled = pcVsPcRadio.Enabled = true;
+            tableSizeX.Enabled = tableSizeY.Enabled = humanVsHumanRadio.Enabled = humanVsPcRadio.Enabled = pcVsPcRadio.Enabled = (currentGame.GameOver);
 
-            blueTurnIndicator.Visible = (turn == PLAYER.BLUE);
-            redTurnIndicator.Visible = (turn == PLAYER.RED);
+            blueTurnIndicator.Visible = (currentGame.Turn == Player.BLUE);
+            redTurnIndicator.Visible = (currentGame.Turn == Player.RED);
 
-            scoreLabel.Text = score[(int)PLAYER.BLUE] + " : " + score[(int)PLAYER.RED];
+            scoreLabel.Text = currentGame.Score[(int)Player.BLUE] + " : " + currentGame.Score[(int)Player.RED];
         }
 
         private void GUI_GameSettingChanged(object sender, EventArgs e)
@@ -151,9 +102,6 @@ namespace etf.dotsandboxes.cl160127d
                 aiTreeDepth.Enabled = true;
                 aiMode.Enabled = true;
             }
-
-            horizontalSpacingBetweenCircles = (canvas.Width - currentGame.TableSizeY * circleDiameter) / (currentGame.TableSizeY + 1);
-            verticalSpacingBetweenCircles = (canvas.Height - currentGame.TableSizeX * circleDiameter) / (currentGame.TableSizeX + 1);
         }
 
         private void Canvas_Paint(object sender, PaintEventArgs e)
@@ -164,20 +112,22 @@ namespace etf.dotsandboxes.cl160127d
             Pen hoverLine = new Pen(Brushes.Gray, LINE_WIDTH);
             Brush[] rectangleBrush = { Brushes.Blue, Brushes.Red };
 
+            // paint the background
             circleCenters.Clear();
             g.Clear(Color.SkyBlue);
 
+            // draw temporary user-friendly hover line
             if (mouseHoverLine != null)
                 g.DrawLine(hoverLine, mouseHoverLine.From, mouseHoverLine.To);
 
-            // drawing colored rectangles
+            // painting closed rectangles
             for (int i = 0; i < boxes.Count; i++)
             {
                 Rectangle rectangle = new Rectangle(boxes[i].TopLeft, new Size(Math.Abs(boxes[i].TopRight.X - boxes[i].TopLeft.X), Math.Abs(boxes[i].BottomLeft.Y - boxes[i].TopLeft.Y)));
                 g.FillRectangle(rectangleBrush[(int)boxes[i].ClosingPlayer], rectangle);
             }
 
-            // drawing existing connections
+            // drawing existing lines
             for (int i = 0; i < existingCanvasLines.Count; i++)
                 g.DrawLine(existingLinePen, existingCanvasLines[i].From, existingCanvasLines[i].To);
 
@@ -189,7 +139,9 @@ namespace etf.dotsandboxes.cl160127d
                     int xStart = (j + 1) * (horizontalSpacingBetweenCircles) + j * circleDiameter;
                     int yStart = (i + 1) * (verticalSpacingBetweenCircles) + i * circleDiameter;
 
+                    // adding to dictionary all circles
                     circleCenters.Add(new VTuple<int, int>(i, j), new Point(xStart + circleDiameter / 2, yStart + circleDiameter / 2));
+                    // painting
                     g.FillEllipse(circleBrush, new Rectangle(new Point(xStart, yStart), new Size(circleDiameter, circleDiameter)));
                 }
             }
@@ -197,6 +149,7 @@ namespace etf.dotsandboxes.cl160127d
 
         private void Canvas_MouseMove(object sender, MouseEventArgs e)
         {
+            // finding the closes circle
             object min = null;
             foreach (DictionaryEntry pair in circleCenters)
             {
@@ -213,9 +166,11 @@ namespace etf.dotsandboxes.cl160127d
 
             if (min != null)
             {
+                // closest circle found
                 Point minPoint = (Point)(((DictionaryEntry)min).Value);
                 Point? coordinateTo = null;
 
+                // if in designated line area
                 if ((Math.Abs(e.X - minPoint.X) <= (horizontalSpacingBetweenCircles + circleDiameter) / 2) &&
                     (Math.Abs(e.Y - minPoint.Y) <= (verticalSpacingBetweenCircles + circleDiameter) / 2))
                 {
@@ -268,6 +223,7 @@ namespace etf.dotsandboxes.cl160127d
                     else
                         valid = false;
 
+                    // signal drawing of temporary line
                     if (valid)
                     {
                         VTuple<int, int> lookingFor = new VTuple<int, int>(coordinatesFrom.Item1 + dx, coordinatesFrom.Item2 + dy);
@@ -283,7 +239,7 @@ namespace etf.dotsandboxes.cl160127d
                             line.To = (Point)coordinateTo;
                             line.CoordinateFrom = coordinatesFrom;
                             line.CoordinateTo = lookingFor;
-                            line.WhoDrew = turn;
+                            line.WhoDrew = currentGame.Turn;
 
                             if (mouseHoverLine != null && mouseHoverLine.From == line.From && mouseHoverLine.To == line.To)
                                 return;
@@ -296,7 +252,7 @@ namespace etf.dotsandboxes.cl160127d
                     }
                     else
                     {
-                        // if introduced to reduce canvas refreshing
+                        // clear non-existing hover line because user has exited the area
                         if (mouseHoverLine != null)
                         {
                             mouseHoverLine = null;
@@ -311,64 +267,51 @@ namespace etf.dotsandboxes.cl160127d
         {
             if (mouseHoverLine != null && !currentGame.GameOver)
             {
-                // TODO: MANDATORY CHECK -------------> if not already added
-                existingCanvasLines.Add(mouseHoverLine);
-
-                ///////////////////////////////////
-                string log = GenerateLogMessage(mouseHoverLine);
-
-                int startPosition = turnRichTextBox.Text.Length;
-                string textToAppend = log + Environment.NewLine;
-
-                turnRichTextBox.AppendText(textToAppend);
-                turnRichTextBox.SelectionStart = startPosition;
-                turnRichTextBox.SelectionLength = log.Length;
-                turnRichTextBox.SelectionColor = (turn == PLAYER.BLUE ? Color.Blue : Color.Red);
-                turnRichTextBox.ScrollToCaret();
-                ///////////////////////////////////
-
-                int numberOfNewBoxes = TryClosingBoxes(mouseHoverLine);
-                score[(int)turn] += numberOfNewBoxes;
-
-                if (numberOfNewBoxes == 0)
-                    SwitchTurn();
-
-                canvas.Refresh();
+                FinishTurn(mouseHoverLine);
 
                 mouseHoverLine = null;
-
-                if (boxes.Count == currentGame.TableSizeX * currentGame.TableSizeY / 2)
-                    currentGame.GameOver = true;
-
-                // has to be below game over set true to enable GUI controls
-                UpdateGUI();
-
-                if (currentGame.GameOver)
-                    MessageBox.Show("Igra je završena");
+                canvas.Refresh();
             }
         }
 
         private void NewGame_Click(object sender, EventArgs e)
         {
-            currentGame = new CurrentGame((int)tableSizeX.Value, (int)tableSizeY.Value);
+            IPlayer opponent = null;
 
-            turn = PLAYER.BLUE;
-            score[0] = score[1] = 0;
+            if (humanVsHumanRadio.Checked)
+            {
+                opponent = null;
+            }
+            else if (humanVsPcRadio.Checked)
+            {
+                switch (aiDifficulty.SelectedIndex)
+                {
+                    case 0:
+                        opponent = new BeginnerAI(existingCanvasLines, nonExistingLines);
+                        break;
+                    case 1:
+                        opponent = new IntermediateAI();
+                        break;
+                    case 2:
+                        opponent = new ExpertAI();
+                        break;
+                    default:
+                        throw new Exception("Required AI difficulty level doesn't exist.");
+                }
+            }
+            else // TODO: make simulation mode (two PCs playing one against another)
+                throw new NotImplementedException();
+            
+            // creating new game
+            currentGame = new CurrentGame((int)tableSizeX.Value, (int)tableSizeY.Value, opponent);
+            CalculateCanvasParameters();
+            CreateNonExistingMovesList();
+
+            // clearing existing data structures
             mouseHoverLine = null;
             existingCanvasLines.Clear();
             boxes.Clear();
             circleCenters.Clear();
-
-            GUI_GameSettingChanged(null, null);
-
-            if (tableSizeX.Value <= 4 && tableSizeY.Value <= 4)
-                circleDiameter = 35;
-            else if ((tableSizeX.Value > 4 && tableSizeY.Value > 4) && (tableSizeX.Value < 10 && tableSizeY.Value < 10))
-                circleDiameter = 25;
-            else if (tableSizeX.Value >= 10 && tableSizeY.Value >= 10)
-                circleDiameter = 15;
-            else
-                circleDiameter = 25;
 
             UpdateGUI();
             canvas.Refresh();
@@ -380,10 +323,10 @@ namespace etf.dotsandboxes.cl160127d
 
         private void SwitchTurn()
         {
-            if (turn == PLAYER.BLUE)
-                turn = PLAYER.RED;
+            if (currentGame.Turn == Player.BLUE)
+                currentGame.Turn = Player.RED;
             else
-                turn = PLAYER.BLUE;
+                currentGame.Turn = Player.BLUE;
         }
 
         private int TryClosingBoxes(LineBetweenCircles line)
@@ -438,7 +381,7 @@ namespace etf.dotsandboxes.cl160127d
                                 (existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateFromX, coordinateFromY) && existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateFromX + dx, coordinateFromY))))
                             {
                                 upperLeft = true;
-                                box.Left = existingCanvasLines[i];
+                                box.LeftEdge = existingCanvasLines[i];
 
                                 continue;
                             }
@@ -449,7 +392,7 @@ namespace etf.dotsandboxes.cl160127d
                                 (existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateToX, coordinateToY) && existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateToX + dx, coordinateToY))))
                             {
                                 upperRight = true;
-                                box.Right = existingCanvasLines[i];
+                                box.RightEdge = existingCanvasLines[i];
 
                                 continue;
                             }
@@ -460,9 +403,9 @@ namespace etf.dotsandboxes.cl160127d
                             {
                                 upperUpper = true;
                                 if (direction == 0)
-                                    box.Upper = existingCanvasLines[i];
+                                    box.UpperEdge = existingCanvasLines[i];
                                 else
-                                    box.Lower = existingCanvasLines[i];
+                                    box.BottomEdge = existingCanvasLines[i];
 
                                 continue;
                             }
@@ -486,7 +429,7 @@ namespace etf.dotsandboxes.cl160127d
                                 (existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateFromX, coordinateFromY) && existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateFromX + dx, coordinateFromY))))
                             {
                                 upperRight = true;
-                                box.Right = existingCanvasLines[i];
+                                box.RightEdge = existingCanvasLines[i];
 
                                 continue;
                             }
@@ -497,7 +440,7 @@ namespace etf.dotsandboxes.cl160127d
                                 (existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateToX, coordinateToY) && existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateToX + dx, coordinateToY))))
                             {
                                 upperLeft = true;
-                                box.Left = existingCanvasLines[i];
+                                box.LeftEdge = existingCanvasLines[i];
 
                                 continue;
                             }
@@ -508,9 +451,9 @@ namespace etf.dotsandboxes.cl160127d
                             {
                                 upperUpper = true;
                                 if (direction == 0)
-                                    box.Upper = existingCanvasLines[i];
+                                    box.UpperEdge = existingCanvasLines[i];
                                 else
-                                    box.Lower = existingCanvasLines[i];
+                                    box.BottomEdge = existingCanvasLines[i];
 
                                 continue;
                             }
@@ -523,20 +466,20 @@ namespace etf.dotsandboxes.cl160127d
                     // add to list of boxes
                     if (upperLeft && upperUpper && upperRight)
                     {
-                        box.ClosingPlayer = turn;
+                        box.ClosingPlayer = currentGame.Turn;
 
                         if (direction == 0)
                         {
-                            box.Lower = line;
+                            box.BottomEdge = line;
 
-                            box.TopLeft = (box.Upper.From.X < box.Upper.To.X ? box.Upper.From : box.Upper.To);
-                            box.TopRight = (box.Upper.From.X > box.Upper.To.X ? box.Upper.From : box.Upper.To);
+                            box.TopLeft = (box.UpperEdge.From.X < box.UpperEdge.To.X ? box.UpperEdge.From : box.UpperEdge.To);
+                            box.TopRight = (box.UpperEdge.From.X > box.UpperEdge.To.X ? box.UpperEdge.From : box.UpperEdge.To);
                         }
                         else
                         {
-                            box.Upper = line;
-                            box.BottomLeft = (box.Lower.From.X < box.Lower.To.X ? box.Lower.From : box.Lower.To);
-                            box.BottomRight = (box.Lower.From.X > box.Lower.To.X ? box.Lower.From : box.Lower.To);
+                            box.UpperEdge = line;
+                            box.BottomLeft = (box.BottomEdge.From.X < box.BottomEdge.To.X ? box.BottomEdge.From : box.BottomEdge.To);
+                            box.BottomRight = (box.BottomEdge.From.X > box.BottomEdge.To.X ? box.BottomEdge.From : box.BottomEdge.To);
                         }
 
                         boxes.Add(box);
@@ -586,7 +529,7 @@ namespace etf.dotsandboxes.cl160127d
                                 (existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateToX, coordinateToY + dy) && existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateToX, coordinateToY))))
                             {
                                 bottom = true;
-                                box.Lower = existingCanvasLines[i];
+                                box.BottomEdge = existingCanvasLines[i];
 
                                 continue;
                             }
@@ -596,7 +539,7 @@ namespace etf.dotsandboxes.cl160127d
                                 (existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateFromX, coordinateFromY + dy) && existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateFromX, coordinateFromY))))
                             {
                                 upper = true;
-                                box.Upper = existingCanvasLines[i];
+                                box.UpperEdge = existingCanvasLines[i];
 
                                 continue;
                             }
@@ -607,9 +550,9 @@ namespace etf.dotsandboxes.cl160127d
                             {
                                 left = true;
                                 if (direction == 0)
-                                    box.Left = existingCanvasLines[i];
+                                    box.LeftEdge = existingCanvasLines[i];
                                 else
-                                    box.Right = existingCanvasLines[i];
+                                    box.RightEdge = existingCanvasLines[i];
 
                                 continue;
                             }
@@ -634,7 +577,7 @@ namespace etf.dotsandboxes.cl160127d
                                 (existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateFromX, coordinateFromY + dy) && existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateFromX, coordinateFromY))))
                             {
                                 bottom = true;
-                                box.Lower = existingCanvasLines[i];
+                                box.BottomEdge = existingCanvasLines[i];
 
                                 continue;
                             }
@@ -644,7 +587,7 @@ namespace etf.dotsandboxes.cl160127d
                                 (existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateToX, coordinateToY + dy) && existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateToX, coordinateToY))))
                             {
                                 upper = true;
-                                box.Upper = existingCanvasLines[i];
+                                box.UpperEdge = existingCanvasLines[i];
 
                                 continue;
                             }
@@ -655,9 +598,9 @@ namespace etf.dotsandboxes.cl160127d
                             {
                                 left = true;
                                 if (direction == 0)
-                                    box.Left = existingCanvasLines[i];
+                                    box.LeftEdge = existingCanvasLines[i];
                                 else
-                                    box.Right = existingCanvasLines[i];
+                                    box.RightEdge = existingCanvasLines[i];
 
                                 continue;
                             }
@@ -666,21 +609,21 @@ namespace etf.dotsandboxes.cl160127d
 
                     if (upper && left && bottom)
                     {
-                        box.ClosingPlayer = turn;
+                        box.ClosingPlayer = currentGame.Turn;
 
                         if (direction == 0)
                         {
-                            box.Right = line;
+                            box.RightEdge = line;
 
-                            box.TopLeft = (box.Upper.From.X < box.Upper.To.X ? box.Upper.From : box.Upper.To);
-                            box.BottomLeft = (box.Lower.From.X < box.Lower.To.X ? box.Lower.From : box.Lower.To);
+                            box.TopLeft = (box.UpperEdge.From.X < box.UpperEdge.To.X ? box.UpperEdge.From : box.UpperEdge.To);
+                            box.BottomLeft = (box.BottomEdge.From.X < box.BottomEdge.To.X ? box.BottomEdge.From : box.BottomEdge.To);
                         }
                         else
                         {
-                            box.Left = line;
+                            box.LeftEdge = line;
 
-                            box.TopRight = (box.Upper.From.X > box.Upper.To.X ? box.Upper.From : box.Upper.To);
-                            box.BottomRight = (box.Lower.From.X > box.Lower.To.X ? box.Lower.From : box.Lower.To);
+                            box.TopRight = (box.UpperEdge.From.X > box.UpperEdge.To.X ? box.UpperEdge.From : box.UpperEdge.To);
+                            box.BottomRight = (box.BottomEdge.From.X > box.BottomEdge.To.X ? box.BottomEdge.From : box.BottomEdge.To);
                         }
 
                         boxes.Add(box);
@@ -692,6 +635,75 @@ namespace etf.dotsandboxes.cl160127d
                 throw new Exception("Diagonal connections now allowed.");
 
             return createdBoxes;
+        }
+        
+        private void CalculateCanvasParameters()
+        {
+            horizontalSpacingBetweenCircles = (canvas.Width - currentGame.TableSizeY * circleDiameter) / (currentGame.TableSizeY + 1);
+            verticalSpacingBetweenCircles = (canvas.Height - currentGame.TableSizeX * circleDiameter) / (currentGame.TableSizeX + 1);
+
+            if (tableSizeX.Value <= 4 && tableSizeY.Value <= 4)
+                circleDiameter = 35;
+            else if ((tableSizeX.Value > 4 && tableSizeY.Value > 4) && (tableSizeX.Value < 10 && tableSizeY.Value < 10))
+                circleDiameter = 25;
+            else if (tableSizeX.Value >= 10 && tableSizeY.Value >= 10)
+                circleDiameter = 15;
+            else
+                circleDiameter = 25;
+        }
+
+        private void FinishTurn(LineBetweenCircles line)
+        {
+            // TODO: MANDATORY CHECK -------------> if not already added
+            existingCanvasLines.Add(mouseHoverLine);
+
+            ///////////////////////////////////
+            string log = GenerateLogMessage(line);
+
+            int startPosition = turnRichTextBox.Text.Length;
+            string textToAppend = log + Environment.NewLine;
+
+            turnRichTextBox.AppendText(textToAppend);
+            turnRichTextBox.SelectionStart = startPosition;
+            turnRichTextBox.SelectionLength = log.Length;
+            turnRichTextBox.SelectionColor = (currentGame.Turn == Player.BLUE ? Color.Blue : Color.Red);
+            turnRichTextBox.ScrollToCaret();
+            ///////////////////////////////////
+
+            int numberOfNewBoxes = TryClosingBoxes(mouseHoverLine);
+            currentGame.Score[(int)currentGame.Turn] += numberOfNewBoxes;
+            
+            if (boxes.Count == currentGame.TableSizeX * currentGame.TableSizeY / 2)
+                currentGame.GameOver = true;
+
+            if (currentGame.GameOver)
+            {
+                MessageBox.Show("Igra je završena");
+            }
+            else
+            {
+                if (numberOfNewBoxes == 0)
+                {
+                    SwitchTurn();
+
+                    if (currentGame.Opponent != null)
+                        currentGame.Opponent.MakeTurn();
+                }
+
+                // has to be below game over in order to enable GUI controls
+                UpdateGUI();
+            }
+        }
+
+
+        private void CreateNonExistingMovesList(LineBetweenCircles move)
+        {
+            //nonExistingLines.Add()
+        }
+
+        private void RemoveFromNonExisting(LineBetweenCircles line)
+        {
+
         }
 
         #endregion
@@ -730,14 +742,8 @@ namespace etf.dotsandboxes.cl160127d
 
         private void LoadGameState(string location)
         {
-
+            // TODO: make game loads current state from file
         }
-
-        #endregion
-
-        #region Artificial Intelligence
-
-
 
         #endregion
 

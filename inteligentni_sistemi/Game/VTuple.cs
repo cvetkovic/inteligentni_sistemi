@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace etf.dotsandboxes.cl160127d
+namespace etf.dotsandboxes.cl160127d.Game
 {
     public class VTuple<T, U> : System.Tuple<T, U>
     {
