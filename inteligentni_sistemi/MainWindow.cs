@@ -342,7 +342,6 @@ namespace etf.dotsandboxes.cl160127d
                 currentGame.Turn = Player.BLUE;
         }
 
-        
         private void CalculateCanvasParameters()
         {
             horizontalSpacingBetweenCircles = (canvas.Width - currentGame.TableSizeY * circleDiameter) / (currentGame.TableSizeY + 1);
@@ -517,7 +516,20 @@ namespace etf.dotsandboxes.cl160127d
 
         private void LoadGameState(string location)
         {
-            // TODO: make game loads current state from file
+            using (StreamReader file = new StreamReader(location))
+            {
+                string firstLine = file.ReadLine();
+                int sizeX = Int32.Parse(firstLine.Substring(0, firstLine.IndexOf(' ')));
+                int sizeY = Int32.Parse(firstLine.Substring(firstLine.IndexOf(' ') + 1));
+
+                CurrentGame currentGame = new CurrentGame(sizeX, sizeY);
+
+                string line;
+                while ((line = file.ReadLine()) != null)
+                {
+                    throw new NotImplementedException();
+                }
+            }
         }
 
         #endregion
