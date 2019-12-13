@@ -9,5 +9,6 @@ namespace etf.dotsandboxes.cl160127d.AI
     interface IPlayer
     {
         LineBetweenCircles MakeTurn();
+        void SetCurrentGame(CurrentGame currentGame);
     }
 }

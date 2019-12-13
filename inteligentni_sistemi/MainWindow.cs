@@ -1,11 +1,13 @@
 ﻿using etf.dotsandboxes.cl160127d.AI;
 using etf.dotsandboxes.cl160127d.Game;
+using etf.dotsandboxes.cl160127d.Utilities;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace etf.dotsandboxes.cl160127d
@@ -41,7 +43,11 @@ namespace etf.dotsandboxes.cl160127d
         {
             InitializeComponent();
 
-            currentGame = new CurrentGame((int)tableSizeX.Value, (int)tableSizeY.Value);
+            // TODO: for DEBUG only
+            BeginnerAI beginnerAI = new BeginnerAI(existingCanvasLines, nonExistingLines, boxes);
+            currentGame = new CurrentGame((int)tableSizeX.Value, (int)tableSizeY.Value, beginnerAI);
+            beginnerAI.SetCurrentGame(currentGame);
+
             GUI_GameSettingChanged(null, null);
         }
 
@@ -145,6 +151,10 @@ namespace etf.dotsandboxes.cl160127d
                     g.FillEllipse(circleBrush, new Rectangle(new Point(xStart, yStart), new Size(circleDiameter, circleDiameter)));
                 }
             }
+
+            // has to be done after initial drawing
+            if (nonExistingLines.Count == 0 && !currentGame.GameOver)
+                CreateNonExistingMovesList();
         }
 
         private void Canvas_MouseMove(object sender, MouseEventArgs e)
@@ -270,7 +280,7 @@ namespace etf.dotsandboxes.cl160127d
                 FinishTurn(mouseHoverLine);
 
                 mouseHoverLine = null;
-                canvas.Refresh();
+                // refreshing done inside FinishTurn(...)
             }
         }
 
@@ -287,7 +297,10 @@ namespace etf.dotsandboxes.cl160127d
                 switch (aiDifficulty.SelectedIndex)
                 {
                     case 0:
-                        opponent = new BeginnerAI(existingCanvasLines, nonExistingLines);
+                        BeginnerAI beginnerAI = new BeginnerAI(existingCanvasLines, nonExistingLines, boxes);
+                        currentGame = new CurrentGame((int)tableSizeX.Value, (int)tableSizeY.Value, beginnerAI);
+                        beginnerAI.SetCurrentGame(currentGame);
+
                         break;
                     case 1:
                         opponent = new IntermediateAI();
@@ -329,313 +342,6 @@ namespace etf.dotsandboxes.cl160127d
                 currentGame.Turn = Player.BLUE;
         }
 
-        private int TryClosingBoxes(LineBetweenCircles line)
-        {
-            int createdBoxes = 0;
-
-            int coordinateFromX = line.CoordinateFrom.Item1;
-            int coordinateFromY = line.CoordinateFrom.Item2;
-            int coordinateToX = line.CoordinateTo.Item1;
-            int coordinateToY = line.CoordinateTo.Item2;
-
-            if (coordinateFromX == coordinateToX)
-            {
-                // horizontal line
-
-                for (int direction = 0; direction < 2; direction++)
-                {
-                    // DIRECTION(0) -> ABOVE
-                    // DIRECTION(1) -> BELOW
-
-                    // (line where x = 0 doesn't have upper element
-                    if (coordinateFromX == 0 && direction == 0)
-                        continue;
-
-                    int dx = (direction == 0 ? -1 : 1); // check for clojure both above and below the line
-
-                    Box box = new Box();
-
-                    bool upperLeft = false;
-                    bool upperUpper = false;
-                    bool upperRight = false;
-
-                    for (int i = 0; i < existingCanvasLines.Count; i++)
-                    {
-                        // looking for left and right
-                        if (coordinateFromY < coordinateToY)
-                        {
-                            if (direction == 0)
-                            {
-                                box.BottomLeft = line.From;
-                                box.BottomRight = line.To;
-                            }
-                            else
-                            {
-                                box.TopLeft = line.From;
-                                box.TopRight = line.To;
-                            }
-
-                            // 'from' is left edge
-                            if (!upperLeft &&
-                                ((existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateFromX, coordinateFromY) && existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateFromX + dx, coordinateFromY)) ||
-                                (existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateFromX, coordinateFromY) && existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateFromX + dx, coordinateFromY))))
-                            {
-                                upperLeft = true;
-                                box.LeftEdge = existingCanvasLines[i];
-
-                                continue;
-                            }
-
-                            // 'to' is right edge
-                            if (!upperRight &&
-                                ((existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateToX, coordinateToY) && existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateToX + dx, coordinateToY)) ||
-                                (existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateToX, coordinateToY) && existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateToX + dx, coordinateToY))))
-                            {
-                                upperRight = true;
-                                box.RightEdge = existingCanvasLines[i];
-
-                                continue;
-                            }
-
-                            if (!upperUpper &&
-                                ((existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateFromX + dx, coordinateFromY) && existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateFromX + dx, coordinateFromY + 1)) ||
-                                (existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateFromX + dx, coordinateFromY) && existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateFromX + dx, coordinateFromY + 1))))
-                            {
-                                upperUpper = true;
-                                if (direction == 0)
-                                    box.UpperEdge = existingCanvasLines[i];
-                                else
-                                    box.BottomEdge = existingCanvasLines[i];
-
-                                continue;
-                            }
-                        }
-                        else
-                        {
-                            if (direction == 0)
-                            {
-                                box.BottomLeft = line.To;
-                                box.BottomRight = line.From;
-                            }
-                            else
-                            {
-                                box.TopLeft = line.To;
-                                box.TopRight = line.From;
-                            }
-
-                            // 'from' is right edge
-                            if (!upperRight &&
-                                ((existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateFromX, coordinateFromY) && existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateFromX + dx, coordinateFromY)) ||
-                                (existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateFromX, coordinateFromY) && existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateFromX + dx, coordinateFromY))))
-                            {
-                                upperRight = true;
-                                box.RightEdge = existingCanvasLines[i];
-
-                                continue;
-                            }
-
-                            // 'to' is left edge
-                            if (!upperLeft &&
-                                ((existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateToX, coordinateToY) && existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateToX + dx, coordinateToY)) ||
-                                (existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateToX, coordinateToY) && existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateToX + dx, coordinateToY))))
-                            {
-                                upperLeft = true;
-                                box.LeftEdge = existingCanvasLines[i];
-
-                                continue;
-                            }
-
-                            if (!upperUpper &&
-                                ((existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateToX + dx, coordinateToY) && existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateFromX + dx, coordinateFromY)) ||
-                                (existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateToX + dx, coordinateToY) && existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateFromX + dx, coordinateFromY))))
-                            {
-                                upperUpper = true;
-                                if (direction == 0)
-                                    box.UpperEdge = existingCanvasLines[i];
-                                else
-                                    box.BottomEdge = existingCanvasLines[i];
-
-                                continue;
-                            }
-                        }
-
-                        if (upperLeft && upperUpper && upperRight)
-                            break;
-                    }
-
-                    // add to list of boxes
-                    if (upperLeft && upperUpper && upperRight)
-                    {
-                        box.ClosingPlayer = currentGame.Turn;
-
-                        if (direction == 0)
-                        {
-                            box.BottomEdge = line;
-
-                            box.TopLeft = (box.UpperEdge.From.X < box.UpperEdge.To.X ? box.UpperEdge.From : box.UpperEdge.To);
-                            box.TopRight = (box.UpperEdge.From.X > box.UpperEdge.To.X ? box.UpperEdge.From : box.UpperEdge.To);
-                        }
-                        else
-                        {
-                            box.UpperEdge = line;
-                            box.BottomLeft = (box.BottomEdge.From.X < box.BottomEdge.To.X ? box.BottomEdge.From : box.BottomEdge.To);
-                            box.BottomRight = (box.BottomEdge.From.X > box.BottomEdge.To.X ? box.BottomEdge.From : box.BottomEdge.To);
-                        }
-
-                        boxes.Add(box);
-                        createdBoxes++;
-                    }
-                }
-            }
-            else if (coordinateFromY == coordinateToY)
-            {
-                // vectical line
-
-                for (int direction = 0; direction < 2; direction++)
-                {
-                    // DIRECTION(0) -> LEFT
-                    // DIRECTION(1) -> RIGHT
-
-                    if (coordinateFromY == 0 && direction == 0)
-                        continue;
-
-                    int dy = (direction == 0 ? -1 : 1);
-
-                    Box box = new Box();
-
-                    bool upper = false;
-                    bool left = false;
-                    bool bottom = false;
-
-                    for (int i = 0; i < existingCanvasLines.Count; i++)
-                    {
-                        if (coordinateFromX < coordinateToX)
-                        {
-                            if (direction == 0)
-                            {
-                                box.TopRight = line.From;
-                                box.BottomRight = line.To;
-                            }
-                            else
-                            {
-                                box.TopLeft = line.From;
-                                box.BottomLeft = line.To;
-                            }
-
-                            // 'from' is up
-                            // 'to' is down
-                            if (!bottom &&
-                                ((existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateToX, coordinateToY + dy) && existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateToX, coordinateToY)) || 
-                                (existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateToX, coordinateToY + dy) && existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateToX, coordinateToY))))
-                            {
-                                bottom = true;
-                                box.BottomEdge = existingCanvasLines[i];
-
-                                continue;
-                            }
-
-                            if (!upper &&
-                                ((existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateFromX, coordinateFromY + dy) && existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateFromX, coordinateFromY)) ||
-                                (existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateFromX, coordinateFromY + dy) && existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateFromX, coordinateFromY))))
-                            {
-                                upper = true;
-                                box.UpperEdge = existingCanvasLines[i];
-
-                                continue;
-                            }
-
-                            if (!left &&
-                                ((existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateToX, coordinateToY + dy) && existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateFromX, coordinateFromY + dy)) ||
-                                (existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateToX, coordinateToY + dy) && existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateFromX, coordinateFromY + dy))))
-                            {
-                                left = true;
-                                if (direction == 0)
-                                    box.LeftEdge = existingCanvasLines[i];
-                                else
-                                    box.RightEdge = existingCanvasLines[i];
-
-                                continue;
-                            }
-                        }
-                        else
-                        {
-                            if (direction == 0)
-                            {
-                                box.TopRight = line.To;
-                                box.BottomRight = line.From;
-                            }
-                            else
-                            {
-                                box.TopLeft = line.To;
-                                box.BottomLeft = line.From;
-                            }
-
-                            // 'from' is down
-                            // 'to' is up
-                            if (!bottom &&
-                                ((existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateFromX, coordinateFromY + dy) && existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateFromX, coordinateFromY)) ||
-                                (existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateFromX, coordinateFromY + dy) && existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateFromX, coordinateFromY))))
-                            {
-                                bottom = true;
-                                box.BottomEdge = existingCanvasLines[i];
-
-                                continue;
-                            }
-
-                            if (!upper &&
-                                ((existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateToX, coordinateToY + dy) && existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateToX, coordinateToY)) ||
-                                (existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateToX, coordinateToY + dy) && existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateToX, coordinateToY))))
-                            {
-                                upper = true;
-                                box.UpperEdge = existingCanvasLines[i];
-
-                                continue;
-                            }
-
-                            if (!left &&
-                                ((existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateFromX, coordinateFromY + dy) && existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateToX, coordinateToY + dy)) ||
-                                (existingCanvasLines[i].CoordinateTo == new VTuple<int, int>(coordinateFromX, coordinateFromY + dy) && existingCanvasLines[i].CoordinateFrom == new VTuple<int, int>(coordinateToX, coordinateToY + dy))))
-                            {
-                                left = true;
-                                if (direction == 0)
-                                    box.LeftEdge = existingCanvasLines[i];
-                                else
-                                    box.RightEdge = existingCanvasLines[i];
-
-                                continue;
-                            }
-                        }
-                    }
-
-                    if (upper && left && bottom)
-                    {
-                        box.ClosingPlayer = currentGame.Turn;
-
-                        if (direction == 0)
-                        {
-                            box.RightEdge = line;
-
-                            box.TopLeft = (box.UpperEdge.From.X < box.UpperEdge.To.X ? box.UpperEdge.From : box.UpperEdge.To);
-                            box.BottomLeft = (box.BottomEdge.From.X < box.BottomEdge.To.X ? box.BottomEdge.From : box.BottomEdge.To);
-                        }
-                        else
-                        {
-                            box.LeftEdge = line;
-
-                            box.TopRight = (box.UpperEdge.From.X > box.UpperEdge.To.X ? box.UpperEdge.From : box.UpperEdge.To);
-                            box.BottomRight = (box.BottomEdge.From.X > box.BottomEdge.To.X ? box.BottomEdge.From : box.BottomEdge.To);
-                        }
-
-                        boxes.Add(box);
-                        createdBoxes++;
-                    }
-                }
-            }
-            else
-                throw new Exception("Diagonal connections now allowed.");
-
-            return createdBoxes;
-        }
         
         private void CalculateCanvasParameters()
         {
@@ -654,8 +360,7 @@ namespace etf.dotsandboxes.cl160127d
 
         private void FinishTurn(LineBetweenCircles line)
         {
-            // TODO: MANDATORY CHECK -------------> if not already added
-            existingCanvasLines.Add(mouseHoverLine);
+            TransferFromNonExistingToExisting(line);
 
             ///////////////////////////////////
             string log = GenerateLogMessage(line);
@@ -670,9 +375,15 @@ namespace etf.dotsandboxes.cl160127d
             turnRichTextBox.ScrollToCaret();
             ///////////////////////////////////
 
-            int numberOfNewBoxes = TryClosingBoxes(mouseHoverLine);
+            int numberOfNewBoxes = AICommon.TryClosingBoxes(existingCanvasLines, currentGame, boxes, line, true);
             currentGame.Score[(int)currentGame.Turn] += numberOfNewBoxes;
-            
+
+            if (numberOfNewBoxes > 0)
+            {
+                canvas.Refresh();
+                UpdateGUI();
+            }
+
             if (boxes.Count == currentGame.TableSizeX * currentGame.TableSizeY / 2)
                 currentGame.GameOver = true;
 
@@ -682,28 +393,92 @@ namespace etf.dotsandboxes.cl160127d
             }
             else
             {
-                if (numberOfNewBoxes == 0)
+                if (currentGame.Turn == Player.BLUE)
                 {
-                    SwitchTurn();
+                    if (numberOfNewBoxes == 0)
+                    {
+                        SwitchTurn();
 
-                    if (currentGame.Opponent != null)
-                        currentGame.Opponent.MakeTurn();
+                        if (currentGame.Opponent != null)
+                            FinishTurn(currentGame.Opponent.MakeTurn());
+                    }
+
+                    UpdateGUI();
                 }
+                else
+                {
+                    if (numberOfNewBoxes == 0)
+                        SwitchTurn();
+                    else if (numberOfNewBoxes > 0 && currentGame.Opponent != null)
+                    {
+                        UpdateGUI();
+                        Thread.Sleep(1000);
 
-                // has to be below game over in order to enable GUI controls
-                UpdateGUI();
+                        FinishTurn(currentGame.Opponent.MakeTurn());
+                    }
+
+                    UpdateGUI();
+                }
+                
             }
         }
 
-
-        private void CreateNonExistingMovesList(LineBetweenCircles move)
+        private void TransferFromNonExistingToExisting(LineBetweenCircles line)
         {
-            //nonExistingLines.Add()
+            for (int i = 0; i < nonExistingLines.Count; i++)
+            {
+                if ((nonExistingLines[i].CoordinateFrom == line.CoordinateFrom && nonExistingLines[i].CoordinateTo == line.CoordinateTo) ||
+                    (nonExistingLines[i].CoordinateTo == line.CoordinateFrom && nonExistingLines[i].CoordinateFrom == line.CoordinateTo))
+                {
+                    LineBetweenCircles trueLine = nonExistingLines[i];
+
+                    nonExistingLines.RemoveAt(i);
+                    existingCanvasLines.Add(trueLine);
+
+                    return;
+                }
+            }
+
+            throw new Exception("Line not found in the list of non-existing lines to be transfered to existing.");
         }
 
-        private void RemoveFromNonExisting(LineBetweenCircles line)
+        private void CreateNonExistingMovesList()
         {
+            nonExistingLines.Clear();
 
+            // horizontal lines
+            for (int i = 0; i < currentGame.TableSizeX; i++)            // rows
+            {
+                for (int j = 0; j < currentGame.TableSizeY - 1; j++)    // columns
+                {
+                    LineBetweenCircles newLine = new LineBetweenCircles();
+                    newLine.CoordinateFrom = new VTuple<int, int>(i, j);
+                    newLine.CoordinateTo = new VTuple<int, int>(i, j + 1);
+
+                    newLine.From = (Point)circleCenters[newLine.CoordinateFrom];
+                    newLine.To = (Point)circleCenters[newLine.CoordinateTo];
+
+                    nonExistingLines.Add(newLine);
+                }
+            }
+
+            // vertical lines
+            for (int j = 0; j < currentGame.TableSizeY; j++)            // rows
+            {
+                for (int i = 0; i < currentGame.TableSizeX - 1; i++)    // columns
+                {
+                    LineBetweenCircles newLine = new LineBetweenCircles();
+                    newLine.CoordinateFrom = new VTuple<int, int>(i, j);
+                    newLine.CoordinateTo = new VTuple<int, int>(i + 1, j);
+
+                    newLine.From = (Point)circleCenters[newLine.CoordinateFrom];
+                    newLine.To = (Point)circleCenters[newLine.CoordinateTo];
+
+                    nonExistingLines.Add(newLine);
+                }
+            }
+
+            Miscellaneous.ShuffleList(nonExistingLines);
         }
 
         #endregion

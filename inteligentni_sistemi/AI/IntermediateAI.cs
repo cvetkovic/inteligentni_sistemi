@@ -12,5 +12,10 @@ namespace etf.dotsandboxes.cl160127d.AI
         {
             throw new NotImplementedException();
         }
+
+        public void SetCurrentGame(CurrentGame currentGame)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
