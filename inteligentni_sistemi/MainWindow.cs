@@ -286,7 +286,7 @@ namespace etf.dotsandboxes.cl160127d
 
         private void NewGame_Click(object sender, EventArgs e)
         {
-            IPlayer opponent = null;
+            BasePlayer opponent = null;
 
             if (humanVsHumanRadio.Checked)
             {
@@ -303,10 +303,10 @@ namespace etf.dotsandboxes.cl160127d
 
                         break;
                     case 1:
-                        opponent = new IntermediateAI();
+                        //opponent = new IntermediateAI();
                         break;
                     case 2:
-                        opponent = new ExpertAI();
+                        //opponent = new ExpertAI();
                         break;
                     default:
                         throw new Exception("Required AI difficulty level doesn't exist.");
@@ -359,7 +359,9 @@ namespace etf.dotsandboxes.cl160127d
 
         private void FinishTurn(LineBetweenCircles line)
         {
-            TransferFromNonExistingToExisting(line);
+            // will return false if clicked on line that had already been drawn on the canvas
+            if (!TransferFromNonExistingToExisting(line))
+                return;
 
             ///////////////////////////////////
             string log = GenerateLogMessage(line);
@@ -422,7 +424,7 @@ namespace etf.dotsandboxes.cl160127d
             }
         }
 
-        private void TransferFromNonExistingToExisting(LineBetweenCircles line)
+        private bool TransferFromNonExistingToExisting(LineBetweenCircles line)
         {
             for (int i = 0; i < nonExistingLines.Count; i++)
             {
@@ -434,11 +436,11 @@ namespace etf.dotsandboxes.cl160127d
                     nonExistingLines.RemoveAt(i);
                     existingCanvasLines.Add(trueLine);
 
-                    return;
+                    return true;
                 }
             }
 
-            throw new Exception("Line not found in the list of non-existing lines to be transfered to existing.");
+            return false;
         }
 
         private void CreateNonExistingMovesList()

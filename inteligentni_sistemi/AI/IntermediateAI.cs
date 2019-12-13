@@ -6,16 +6,20 @@ using System.Text;
 
 namespace etf.dotsandboxes.cl160127d.AI
 {
-    class IntermediateAI : IPlayer
+    class IntermediateAI : BasePlayer
     {
-        public LineBetweenCircles MakeTurn()
-        {
-            throw new NotImplementedException();
-        }
+        public IntermediateAI(List<LineBetweenCircles> existingMoves,
+            List<LineBetweenCircles> nonExistingMoves,
+            List<Box> boxes) : base(existingMoves, nonExistingMoves, boxes) { }
 
-        public void SetCurrentGame(CurrentGame currentGame)
+        protected override LineBetweenCircles TurnAction()
         {
-            throw new NotImplementedException();
+            LineBetweenCircles closingEdge;
+
+            if ((closingEdge = AICommon.FindBoxClosingEdge(existingMoves, nonExistingMoves, currentGame, boxes)) != null)
+                return closingEdge;
+            else
+                return AICommon.Minimax();
         }
     }
 }

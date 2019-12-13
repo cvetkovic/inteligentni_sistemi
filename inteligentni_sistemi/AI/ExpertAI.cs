@@ -6,14 +6,13 @@ using etf.dotsandboxes.cl160127d.Game;
 
 namespace etf.dotsandboxes.cl160127d.AI
 {
-    class ExpertAI : IPlayer
+    class ExpertAI : BasePlayer
     {
-        public LineBetweenCircles MakeTurn()
-        {
-            throw new NotImplementedException();
-        }
+        public ExpertAI(List<LineBetweenCircles> existingMoves,
+            List<LineBetweenCircles> nonExistingMoves,
+            List<Box> boxes) : base(existingMoves, nonExistingMoves, boxes) { }
 
-        public void SetCurrentGame(CurrentGame currentGame)
+        protected override LineBetweenCircles TurnAction()
         {
             throw new NotImplementedException();
         }
