@@ -321,11 +321,6 @@ namespace etf.dotsandboxes.cl160127d.AI
             return createdBoxes;
         }
 
-        public static LineBetweenCircles Minimax()
-        {
-            throw new NotImplementedException();
-        }
-
         public static LineBetweenCircles FindBoxClosingEdge(List<LineBetweenCircles> existingCanvasLines,
             List<LineBetweenCircles> nonExistingCanvasLines,
             CurrentGame currentGame,

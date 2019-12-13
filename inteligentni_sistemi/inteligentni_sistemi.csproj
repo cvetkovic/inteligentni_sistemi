@@ -48,6 +48,9 @@
     <Compile Include="AI\BeginnerAI.cs" />
     <Compile Include="AI\ExpertAI.cs" />
     <Compile Include="AI\IntermediateAI.cs" />
+    <Compile Include="AI\Minimax\ExpertMinimax.cs" />
+    <Compile Include="AI\Minimax\IntermediateMinimax.cs" />
+    <Compile Include="AI\Minimax\Minimax.cs" />
     <Compile Include="Game\Box.cs" />
     <Compile Include="Game\CurrentGame.cs" />
     <Compile Include="Game\LineBetweenCircles.cs" />

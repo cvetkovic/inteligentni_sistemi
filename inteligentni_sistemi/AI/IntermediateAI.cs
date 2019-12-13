@@ -1,16 +1,24 @@
-﻿using etf.dotsandboxes.cl160127d.Game;
-using System;
+﻿using etf.dotsandboxes.cl160127d.AI.Minimax;
+using etf.dotsandboxes.cl160127d.Game;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace etf.dotsandboxes.cl160127d.AI
 {
+    /// <summary>
+    /// Beginner AI player first tries to close all possible boxes. If that is not possible it chooses the best move
+    /// using the minimax algorithm with simple estimation function
+    /// </summary>
     class IntermediateAI : BasePlayer
     {
+        private int minimaxDepth;
+
         public IntermediateAI(List<LineBetweenCircles> existingMoves,
-            List<LineBetweenCircles> nonExistingMoves,
-            List<Box> boxes) : base(existingMoves, nonExistingMoves, boxes) { }
+                              List<LineBetweenCircles> nonExistingMoves,
+                              List<Box> boxes,
+                              int minimaxDepth) : base(existingMoves, nonExistingMoves, boxes)
+        {
+            this.minimaxDepth = minimaxDepth;
+        }
 
         protected override LineBetweenCircles TurnAction()
         {
@@ -19,7 +27,10 @@ namespace etf.dotsandboxes.cl160127d.AI
             if ((closingEdge = AICommon.FindBoxClosingEdge(existingMoves, nonExistingMoves, currentGame, boxes)) != null)
                 return closingEdge;
             else
-                return AICommon.Minimax();
+            {
+                IntermediateMinimax minimax = new IntermediateMinimax(existingMoves, nonExistingMoves, minimaxDepth);
+                return minimax.GetBestMove();
+            }
         }
     }
 }

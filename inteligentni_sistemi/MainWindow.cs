@@ -44,9 +44,9 @@ namespace etf.dotsandboxes.cl160127d
             InitializeComponent();
 
             // TODO: for DEBUG only
-            BeginnerAI beginnerAI = new BeginnerAI(existingCanvasLines, nonExistingLines, boxes);
-            currentGame = new CurrentGame((int)tableSizeX.Value, (int)tableSizeY.Value, beginnerAI);
-            beginnerAI.SetCurrentGame(currentGame);
+            IntermediateAI intermediateAI = new IntermediateAI(existingCanvasLines, nonExistingLines, boxes, 1);
+            currentGame = new CurrentGame((int)tableSizeX.Value, (int)tableSizeY.Value, intermediateAI);
+            intermediateAI.SetCurrentGame(currentGame);
 
             GUI_GameSettingChanged(null, null);
         }
@@ -297,16 +297,16 @@ namespace etf.dotsandboxes.cl160127d
                 switch (aiDifficulty.SelectedIndex)
                 {
                     case 0:
-                        BeginnerAI beginnerAI = new BeginnerAI(existingCanvasLines, nonExistingLines, boxes);
-                        currentGame = new CurrentGame((int)tableSizeX.Value, (int)tableSizeY.Value, beginnerAI);
-                        beginnerAI.SetCurrentGame(currentGame);
+                        opponent = new BeginnerAI(existingCanvasLines, nonExistingLines, boxes);
 
                         break;
                     case 1:
-                        //opponent = new IntermediateAI();
+                        opponent = new IntermediateAI(existingCanvasLines, nonExistingLines, boxes, (int)aiTreeDepth.Value);
+
                         break;
                     case 2:
-                        //opponent = new ExpertAI();
+                        opponent = new ExpertAI(existingCanvasLines, nonExistingLines, boxes, (int)aiTreeDepth.Value);
+
                         break;
                     default:
                         throw new Exception("Required AI difficulty level doesn't exist.");
@@ -317,6 +317,9 @@ namespace etf.dotsandboxes.cl160127d
             
             // creating new game
             currentGame = new CurrentGame((int)tableSizeX.Value, (int)tableSizeY.Value, opponent);
+            if (currentGame.Opponent != null)
+                currentGame.Opponent.SetCurrentGame(currentGame);
+
             CalculateCanvasParameters();
             CreateNonExistingMovesList();
 
@@ -518,6 +521,8 @@ namespace etf.dotsandboxes.cl160127d
 
         private void LoadGameState(string location)
         {
+            throw new NotImplementedException();
+
             using (StreamReader file = new StreamReader(location))
             {
                 string firstLine = file.ReadLine();
