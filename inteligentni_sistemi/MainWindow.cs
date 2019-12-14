@@ -48,6 +48,7 @@ namespace etf.dotsandboxes.cl160127d
             currentGame = new CurrentGame((int)tableSizeX.Value, (int)tableSizeY.Value, intermediateAI);
             intermediateAI.SetCurrentGame(currentGame);
 
+            CalculateCanvasParameters();    // don't remove this
             GUI_GameSettingChanged(null, null);
         }
 
@@ -87,6 +88,7 @@ namespace etf.dotsandboxes.cl160127d
         public void UpdateGUI()
         {
             tableSizeX.Enabled = tableSizeY.Enabled = humanVsHumanRadio.Enabled = humanVsPcRadio.Enabled = pcVsPcRadio.Enabled = (currentGame.GameOver);
+            aiDifficulty.Enabled = aiTreeDepth.Enabled = aiMode.Enabled = (currentGame.GameOver);
 
             blueTurnIndicator.Visible = (currentGame.Turn == Player.BLUE);
             redTurnIndicator.Visible = (currentGame.Turn == Player.RED);
@@ -119,6 +121,7 @@ namespace etf.dotsandboxes.cl160127d
             Brush[] rectangleBrush = { Brushes.Blue, Brushes.Red };
 
             // paint the background
+            CalculateCanvasParameters();
             circleCenters.Clear();
             g.Clear(Color.SkyBlue);
 
@@ -275,6 +278,12 @@ namespace etf.dotsandboxes.cl160127d
 
         private void Canvas_MouseClick(object sender, MouseEventArgs e)
         {
+            if (currentGame == null)
+            {
+                MessageBox.Show("Igra nije započeta!");
+                return;
+            }
+
             if (mouseHoverLine != null && !currentGame.GameOver)
             {
                 FinishTurn(mouseHoverLine);
@@ -294,6 +303,17 @@ namespace etf.dotsandboxes.cl160127d
             }
             else if (humanVsPcRadio.Checked)
             {
+                if (aiDifficulty.SelectedIndex == -1)
+                {
+                    MessageBox.Show("Težina protivničkog igrača nije izabrana.");
+                    return;
+                }
+                else if (aiMode.SelectedIndex == -1)
+                {
+                    MessageBox.Show("Režim rada protivničkog igrača nije izabran.");
+                    return;
+                }
+
                 switch (aiDifficulty.SelectedIndex)
                 {
                     case 0:
@@ -321,7 +341,6 @@ namespace etf.dotsandboxes.cl160127d
                 currentGame.Opponent.SetCurrentGame(currentGame);
 
             CalculateCanvasParameters();
-            CreateNonExistingMovesList();
 
             // clearing existing data structures
             mouseHoverLine = null;
@@ -331,6 +350,8 @@ namespace etf.dotsandboxes.cl160127d
 
             UpdateGUI();
             canvas.Refresh();
+
+            CreateNonExistingMovesList();
         }
 
         #endregion
@@ -396,6 +417,7 @@ namespace etf.dotsandboxes.cl160127d
 
             if (currentGame.GameOver)
             {
+                UpdateGUI();
                 MessageBox.Show("Igra je završena");
             }
             else

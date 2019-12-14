@@ -189,10 +189,25 @@
             // aiTreeDepth
             // 
             this.aiTreeDepth.Location = new System.Drawing.Point(116, 171);
+            this.aiTreeDepth.Maximum = new decimal(new int[] {
+            20,
+            0,
+            0,
+            0});
+            this.aiTreeDepth.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
             this.aiTreeDepth.Name = "aiTreeDepth";
             this.aiTreeDepth.Size = new System.Drawing.Size(216, 22);
             this.aiTreeDepth.TabIndex = 17;
             this.aiTreeDepth.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+            this.aiTreeDepth.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
             // 
             // label10
             // 
