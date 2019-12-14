@@ -22,15 +22,9 @@ namespace etf.dotsandboxes.cl160127d.AI
 
         protected override LineBetweenCircles TurnAction()
         {
-            LineBetweenCircles closingEdge;
+            IntermediateMinimax minimax = new IntermediateMinimax(existingMoves, nonExistingMoves, minimaxDepth);
 
-            if ((closingEdge = AICommon.FindBoxClosingEdge(existingMoves, nonExistingMoves, currentGame, boxes)) != null)
-                return closingEdge;
-            else
-            {
-                IntermediateMinimax minimax = new IntermediateMinimax(existingMoves, nonExistingMoves, minimaxDepth);
-                return minimax.GetBestMove();
-            }
+            return minimax.GetBestMove();
         }
     }
 }

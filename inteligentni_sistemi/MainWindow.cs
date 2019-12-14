@@ -30,7 +30,7 @@ namespace etf.dotsandboxes.cl160127d
         private CurrentGame currentGame;
 
         private Hashtable circleCenters = new Hashtable();
-        
+
         private List<LineBetweenCircles> existingCanvasLines = new List<LineBetweenCircles>();
         private List<LineBetweenCircles> nonExistingLines = new List<LineBetweenCircles>();
         private List<Box> boxes = new List<Box>();
@@ -44,7 +44,7 @@ namespace etf.dotsandboxes.cl160127d
             InitializeComponent();
 
             // TODO: for DEBUG only
-            IntermediateAI intermediateAI = new IntermediateAI(existingCanvasLines, nonExistingLines, boxes, 1);
+            IntermediateAI intermediateAI = new IntermediateAI(existingCanvasLines, nonExistingLines, boxes, 2);
             currentGame = new CurrentGame((int)tableSizeX.Value, (int)tableSizeY.Value, intermediateAI);
             intermediateAI.SetCurrentGame(currentGame);
 
@@ -314,7 +314,7 @@ namespace etf.dotsandboxes.cl160127d
             }
             else // TODO: make simulation mode (two PCs playing one against another)
                 throw new NotImplementedException();
-            
+
             // creating new game
             currentGame = new CurrentGame((int)tableSizeX.Value, (int)tableSizeY.Value, opponent);
             if (currentGame.Opponent != null)
@@ -362,6 +362,9 @@ namespace etf.dotsandboxes.cl160127d
 
         private void FinishTurn(LineBetweenCircles line)
         {
+            if (line == null)
+                throw new Exception("AI returned null for the next move.");
+
             // will return false if clicked on line that had already been drawn on the canvas
             if (!TransferFromNonExistingToExisting(line))
                 return;
@@ -379,7 +382,7 @@ namespace etf.dotsandboxes.cl160127d
             turnRichTextBox.ScrollToCaret();
             ///////////////////////////////////
 
-            int numberOfNewBoxes = AICommon.TryClosingBoxes(existingCanvasLines, currentGame, boxes, line, true);
+            int numberOfNewBoxes = AICommon.TryClosingBoxes(existingCanvasLines, currentGame, boxes, line, out int[] notUsed, true);
             currentGame.Score[(int)currentGame.Turn] += numberOfNewBoxes;
 
             if (numberOfNewBoxes > 0)
@@ -388,7 +391,7 @@ namespace etf.dotsandboxes.cl160127d
                 UpdateGUI();
             }
 
-            if (boxes.Count == currentGame.TableSizeX * currentGame.TableSizeY / 2)
+            if (boxes.Count == (currentGame.TableSizeX - 1) * (currentGame.TableSizeY - 1))
                 currentGame.GameOver = true;
 
             if (currentGame.GameOver)
@@ -423,7 +426,7 @@ namespace etf.dotsandboxes.cl160127d
 
                     UpdateGUI();
                 }
-                
+
             }
         }
 
@@ -514,7 +517,7 @@ namespace etf.dotsandboxes.cl160127d
             if (line.From.X == line.To.X) // vertical line
                 s = string.Format("{0}{1}", TranslateAxisToLetter(line.CoordinateFrom.Item1 < line.CoordinateTo.Item1 ? line.CoordinateFrom.Item1 : line.CoordinateTo.Item1), (line.CoordinateFrom.Item2 < line.CoordinateTo.Item2 ? line.CoordinateFrom.Item2 : line.CoordinateTo.Item2));
             else                        // horizontal line
-                s = string.Format("{0}{1}", (line.CoordinateFrom.Item1 < line.CoordinateTo.Item1 ? line.CoordinateFrom.Item1 : line.CoordinateTo.Item1), TranslateAxisToLetter(line.CoordinateFrom.Item2 < line.CoordinateTo.Item2 ? line.CoordinateFrom.Item2 : line.CoordinateTo.Item2)); 
+                s = string.Format("{0}{1}", (line.CoordinateFrom.Item1 < line.CoordinateTo.Item1 ? line.CoordinateFrom.Item1 : line.CoordinateTo.Item1), TranslateAxisToLetter(line.CoordinateFrom.Item2 < line.CoordinateTo.Item2 ? line.CoordinateFrom.Item2 : line.CoordinateTo.Item2));
 
             return s;
         }

@@ -8,12 +8,16 @@ namespace etf.dotsandboxes.cl160127d.AI
     class AICommon
     {
         public static int TryClosingBoxes(List<LineBetweenCircles> existingCanvasLines,
-            CurrentGame currentGame,
-            List<Box> boxes,
-            LineBetweenCircles line,
-            bool addToList = false)
+                                          CurrentGame currentGame,
+                                          List<Box> boxes,
+                                          LineBetweenCircles line,
+                                          out int[] surroundingEdges,
+                                          bool addToList = false)
         {
             int createdBoxes = 0;
+
+            surroundingEdges = new int[2];
+            surroundingEdges[0] = surroundingEdges[1] = 0;
 
             int coordinateFromX = line.CoordinateFrom.Item1;
             int coordinateFromY = line.CoordinateFrom.Item2;
@@ -65,6 +69,8 @@ namespace etf.dotsandboxes.cl160127d.AI
                                 upperLeft = true;
                                 box.LeftEdge = existingCanvasLines[i];
 
+                                surroundingEdges[0]++;
+
                                 continue;
                             }
 
@@ -75,6 +81,8 @@ namespace etf.dotsandboxes.cl160127d.AI
                             {
                                 upperRight = true;
                                 box.RightEdge = existingCanvasLines[i];
+
+                                surroundingEdges[0]++;
 
                                 continue;
                             }
@@ -88,6 +96,8 @@ namespace etf.dotsandboxes.cl160127d.AI
                                     box.UpperEdge = existingCanvasLines[i];
                                 else
                                     box.BottomEdge = existingCanvasLines[i];
+
+                                surroundingEdges[0]++;
 
                                 continue;
                             }
@@ -113,6 +123,8 @@ namespace etf.dotsandboxes.cl160127d.AI
                                 upperRight = true;
                                 box.RightEdge = existingCanvasLines[i];
 
+                                surroundingEdges[0]++;
+
                                 continue;
                             }
 
@@ -123,6 +135,8 @@ namespace etf.dotsandboxes.cl160127d.AI
                             {
                                 upperLeft = true;
                                 box.LeftEdge = existingCanvasLines[i];
+
+                                surroundingEdges[0]++;
 
                                 continue;
                             }
@@ -137,6 +151,8 @@ namespace etf.dotsandboxes.cl160127d.AI
                                 else
                                     box.BottomEdge = existingCanvasLines[i];
 
+                                surroundingEdges[0]++;
+
                                 continue;
                             }
                         }
@@ -148,7 +164,8 @@ namespace etf.dotsandboxes.cl160127d.AI
                     // add to list of boxes
                     if (upperLeft && upperUpper && upperRight)
                     {
-                        box.ClosingPlayer = currentGame.Turn;
+                        if (currentGame != null)
+                            box.ClosingPlayer = currentGame.Turn;
 
                         if (direction == 0)
                         {
@@ -214,6 +231,8 @@ namespace etf.dotsandboxes.cl160127d.AI
                                 bottom = true;
                                 box.BottomEdge = existingCanvasLines[i];
 
+                                surroundingEdges[1]++;
+
                                 continue;
                             }
 
@@ -223,6 +242,8 @@ namespace etf.dotsandboxes.cl160127d.AI
                             {
                                 upper = true;
                                 box.UpperEdge = existingCanvasLines[i];
+
+                                surroundingEdges[1]++;
 
                                 continue;
                             }
@@ -236,6 +257,8 @@ namespace etf.dotsandboxes.cl160127d.AI
                                     box.LeftEdge = existingCanvasLines[i];
                                 else
                                     box.RightEdge = existingCanvasLines[i];
+
+                                surroundingEdges[1]++;
 
                                 continue;
                             }
@@ -262,6 +285,8 @@ namespace etf.dotsandboxes.cl160127d.AI
                                 bottom = true;
                                 box.BottomEdge = existingCanvasLines[i];
 
+                                surroundingEdges[1]++;
+
                                 continue;
                             }
 
@@ -271,6 +296,8 @@ namespace etf.dotsandboxes.cl160127d.AI
                             {
                                 upper = true;
                                 box.UpperEdge = existingCanvasLines[i];
+
+                                surroundingEdges[1]++;
 
                                 continue;
                             }
@@ -285,6 +312,8 @@ namespace etf.dotsandboxes.cl160127d.AI
                                 else
                                     box.RightEdge = existingCanvasLines[i];
 
+                                surroundingEdges[1]++;
+
                                 continue;
                             }
                         }
@@ -292,7 +321,8 @@ namespace etf.dotsandboxes.cl160127d.AI
 
                     if (upper && left && bottom)
                     {
-                        box.ClosingPlayer = currentGame.Turn;
+                        if (currentGame != null)
+                            box.ClosingPlayer = currentGame.Turn;
 
                         if (direction == 0)
                         {
@@ -327,7 +357,7 @@ namespace etf.dotsandboxes.cl160127d.AI
             List<Box> boxes)
         {
             foreach (LineBetweenCircles line in nonExistingCanvasLines)
-                if (TryClosingBoxes(existingCanvasLines, currentGame, boxes, line) > 0)
+                if (TryClosingBoxes(existingCanvasLines, currentGame, boxes, line, out int[] notUsed) > 0)
                     return line;
 
             return null;

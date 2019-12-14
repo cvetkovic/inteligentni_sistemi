@@ -354,7 +354,7 @@
             this.tableSizeX.TabIndex = 4;
             this.tableSizeX.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.tableSizeX.Value = new decimal(new int[] {
-            4,
+            2,
             0,
             0,
             0});

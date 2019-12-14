@@ -41,7 +41,7 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
             public int EstimationScore { get; set; }
 
             public LineBetweenCircles DeltaMove { get; set; }
-            
+
             public List<LineBetweenCircles> ExistingLines
             {
                 get
@@ -63,7 +63,7 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
 
         #region Base Class Constructor
 
-        protected Minimax(List<LineBetweenCircles> existingLines, 
+        protected Minimax(List<LineBetweenCircles> existingLines,
                           List<LineBetweenCircles> nonExistingLines,
                           int maxTreeDepth)
         {
@@ -81,44 +81,118 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
             TreeNode node = new TreeNode();
 
             node.EstimationScore = 0;
-            node.Player = MinimaxPlayerType.MAX;
+            node.Player = MinimaxPlayerType.MIN;
 
             node.ExistingLines.AddRange(initialExistingLines);
             node.NonExistingLines.AddRange(initialNonExistingLines);
 
-            ConstructTree(node, 0);
+            ConstructTree(node, 0, MinimaxPlayerType.MIN, int.MinValue, int.MaxValue);
 
             return node;
         }
 
-        private void ConstructTree(TreeNode parentNode, int depth)
+        private int ConstructTree(TreeNode parentNode, int depth, MinimaxPlayerType minimaxPlayer, int alpha, int beta)
         {
-            if (depth == maxTreeDepth)
-                return;
+            // return estimation function if max tree depth reached or game is in finished state
+            if (depth == maxTreeDepth || parentNode.NonExistingLines.Count == 0)
+                return EstimationFunction(parentNode);
 
-            for (int i = 0; i < parentNode.NonExistingLines.Count; i++)
+            if (minimaxPlayer == MinimaxPlayerType.MAX)
             {
-                TreeNode node = new TreeNode();
+                int bestValue = int.MinValue;
 
-                node.EstimationScore = EstimationFunction(node);
-                node.Player = (parentNode.Player == MinimaxPlayerType.MAX ? MinimaxPlayerType.MIN : MinimaxPlayerType.MAX);
+                for (int i = 0; i < parentNode.NonExistingLines.Count; i++)
+                {
+                    #region New Node Creation
+                    TreeNode node = new TreeNode();
 
-                node.ExistingLines.AddRange(parentNode.ExistingLines);
-                node.ExistingLines.Add(parentNode.NonExistingLines[i]);
+                    // calculate estimation function only for leaf nodes
+                    node.Player = (parentNode.Player == MinimaxPlayerType.MAX ? MinimaxPlayerType.MIN : MinimaxPlayerType.MAX);
 
-                node.NonExistingLines.AddRange(parentNode.NonExistingLines);
-                node.NonExistingLines.Remove(parentNode.NonExistingLines[i]);
+                    node.ExistingLines.AddRange(parentNode.ExistingLines);
+                    node.ExistingLines.Add(parentNode.NonExistingLines[i]);
 
-                node.DeltaMove = parentNode.NonExistingLines[i];
-                parentNode.Children.Add(node);
+                    node.NonExistingLines.AddRange(parentNode.NonExistingLines);
+                    node.NonExistingLines.Remove(parentNode.NonExistingLines[i]);
 
-                ConstructTree(node, depth + 1);
+                    node.DeltaMove = parentNode.NonExistingLines[i];
+                    #endregion
+
+                    node.EstimationScore = ConstructTree(node, depth + 1, MinimaxPlayerType.MIN, alpha, beta);
+                    if (this is IntermediateMinimax && (node.EstimationScore == -1) || (node.EstimationScore == -2))
+                        continue;
+
+                    bestValue = (bestValue > node.EstimationScore ? bestValue : node.EstimationScore);
+                    alpha = (alpha > bestValue ? alpha : bestValue);
+                    if (beta <= alpha)
+                        break;
+
+                    parentNode.Children.Add(node);
+                }
+
+                parentNode.EstimationScore = bestValue;
+                return bestValue;
             }
+            else
+            {
+                int bestValue = int.MaxValue;
+
+                for (int i = 0; i < parentNode.NonExistingLines.Count; i++)
+                {
+                    #region New Node Creation
+                    TreeNode node = new TreeNode();
+
+                    // calculate estimation function only for leaf nodes
+                    node.Player = (parentNode.Player == MinimaxPlayerType.MAX ? MinimaxPlayerType.MIN : MinimaxPlayerType.MAX);
+
+                    node.ExistingLines.AddRange(parentNode.ExistingLines);
+                    node.ExistingLines.Add(parentNode.NonExistingLines[i]);
+
+                    node.NonExistingLines.AddRange(parentNode.NonExistingLines);
+                    node.NonExistingLines.Remove(parentNode.NonExistingLines[i]);
+
+                    node.DeltaMove = parentNode.NonExistingLines[i];
+                    #endregion
+
+                    node.EstimationScore = ConstructTree(node, depth + 1, MinimaxPlayerType.MAX, alpha, beta);
+                    if (this is IntermediateMinimax && (node.EstimationScore == -1) || (node.EstimationScore == -2))
+                        continue;
+
+                    bestValue = (bestValue < node.EstimationScore ? bestValue : node.EstimationScore);
+                    beta = (beta < bestValue ? beta : bestValue);
+                    if (beta <= alpha)
+                        break;
+
+                    parentNode.Children.Add(node);
+                }
+
+                parentNode.EstimationScore = bestValue;
+                return bestValue;
+            }
+
+            throw new Exception("Something wrong in minimax happened");
         }
 
         public LineBetweenCircles GetBestMove()
         {
-            return null;
+            if (rootNode != null && rootNode.Children.Count > 0)
+            {
+                int indexMax = 0;
+                int max = rootNode.Children[0].EstimationScore;
+
+                for (int i = 1; i < rootNode.Children.Count; i++)
+                {
+                    if (rootNode.Children[i].EstimationScore > max)
+                    {
+                        indexMax = i;
+                        max = rootNode.Children[i].EstimationScore;
+                    }
+                }
+
+                return rootNode.Children[indexMax].DeltaMove;
+            }
+            else
+                return null;
         }
 
         protected abstract int EstimationFunction(TreeNode node);
