@@ -135,8 +135,7 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
                     node.NonExistingLines.AddRange(parentNode.NonExistingLines);
                     node.NonExistingLines.Remove(parentNode.NonExistingLines[i]);
 
-                    if(parentNode.Boxes.Count > 0)
-                        node.Boxes.AddRange(parentNode.Boxes);
+                    node.Boxes.AddRange(parentNode.Boxes);
                     List<Box> newBoxes = AICommon.TryClosingBoxes(parentNode.ExistingLines, null, parentNode.NonExistingLines[i], out int[] notUsed);
                     node.Boxes.AddRange(newBoxes);
 
@@ -144,8 +143,8 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
                     #endregion
 
                     node.EstimationScore = ConstructTree(node, depth + 1, MinimaxPlayerType.MIN, alpha, beta);
-                    if (this is IntermediateMinimax && (node.EstimationScore == -1) || (node.EstimationScore == -2))
-                        continue;
+                    /*if (this is IntermediateMinimax && (node.EstimationScore == -1) || (node.EstimationScore == -2))
+                        continue;*/
 
                     bestValue = (bestValue > node.EstimationScore ? bestValue : node.EstimationScore);
                     alpha = (alpha > bestValue ? alpha : bestValue);
@@ -176,8 +175,7 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
                     node.NonExistingLines.AddRange(parentNode.NonExistingLines);
                     node.NonExistingLines.Remove(parentNode.NonExistingLines[i]);
 
-                    if (parentNode.Boxes.Count > 0)
-                        node.Boxes.AddRange(parentNode.Boxes);
+                    node.Boxes.AddRange(parentNode.Boxes);
                     List<Box> newBoxes = AICommon.TryClosingBoxes(parentNode.ExistingLines, null, parentNode.NonExistingLines[i], out int[] notUsed);
                     node.Boxes.AddRange(newBoxes);
 
@@ -185,9 +183,9 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
                     #endregion
 
                     node.EstimationScore = ConstructTree(node, depth + 1, MinimaxPlayerType.MAX, alpha, beta);
-                    if (this is IntermediateMinimax && (node.EstimationScore == -1) || (node.EstimationScore == -2))
-                        continue;
-
+                    /*if (this is IntermediateMinimax && (node.EstimationScore == -1) || (node.EstimationScore == -2))
+                        continue;*/
+                        
                     bestValue = (bestValue < node.EstimationScore ? bestValue : node.EstimationScore);
                     beta = (beta < bestValue ? beta : bestValue);
                     if (beta <= alpha)

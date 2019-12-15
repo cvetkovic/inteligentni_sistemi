@@ -30,6 +30,8 @@ namespace etf.dotsandboxes.cl160127d.AI
 
         public override Minimax.Minimax.MinimaxTreeNode GetMinimaxTreeNode()
         {
+            minimax = new IntermediateMinimax(existingMoves, nonExistingMoves, boxes, minimaxDepth);
+
             return minimax.RootNode;
         }
     }
