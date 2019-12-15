@@ -67,7 +67,7 @@ namespace etf.dotsandboxes.cl160127d.AI
                                 upperLeft = true;
                                 box.LeftEdge = existingCanvasLines[i];
 
-                                surroundingEdges[0]++;
+                                surroundingEdges[direction]++;
 
                                 continue;
                             }
@@ -80,7 +80,7 @@ namespace etf.dotsandboxes.cl160127d.AI
                                 upperRight = true;
                                 box.RightEdge = existingCanvasLines[i];
 
-                                surroundingEdges[0]++;
+                                surroundingEdges[direction]++;
 
                                 continue;
                             }
@@ -95,7 +95,7 @@ namespace etf.dotsandboxes.cl160127d.AI
                                 else
                                     box.BottomEdge = existingCanvasLines[i];
 
-                                surroundingEdges[0]++;
+                                surroundingEdges[direction]++;
 
                                 continue;
                             }
@@ -121,7 +121,7 @@ namespace etf.dotsandboxes.cl160127d.AI
                                 upperRight = true;
                                 box.RightEdge = existingCanvasLines[i];
 
-                                surroundingEdges[0]++;
+                                surroundingEdges[direction]++;
 
                                 continue;
                             }
@@ -134,7 +134,7 @@ namespace etf.dotsandboxes.cl160127d.AI
                                 upperLeft = true;
                                 box.LeftEdge = existingCanvasLines[i];
 
-                                surroundingEdges[0]++;
+                                surroundingEdges[direction]++;
 
                                 continue;
                             }
@@ -149,7 +149,7 @@ namespace etf.dotsandboxes.cl160127d.AI
                                 else
                                     box.BottomEdge = existingCanvasLines[i];
 
-                                surroundingEdges[0]++;
+                                surroundingEdges[direction]++;
 
                                 continue;
                             }
@@ -226,7 +226,7 @@ namespace etf.dotsandboxes.cl160127d.AI
                                 bottom = true;
                                 box.BottomEdge = existingCanvasLines[i];
 
-                                surroundingEdges[1]++;
+                                surroundingEdges[direction]++;
 
                                 continue;
                             }
@@ -238,7 +238,7 @@ namespace etf.dotsandboxes.cl160127d.AI
                                 upper = true;
                                 box.UpperEdge = existingCanvasLines[i];
 
-                                surroundingEdges[1]++;
+                                surroundingEdges[direction]++;
 
                                 continue;
                             }
@@ -253,7 +253,7 @@ namespace etf.dotsandboxes.cl160127d.AI
                                 else
                                     box.RightEdge = existingCanvasLines[i];
 
-                                surroundingEdges[1]++;
+                                surroundingEdges[direction]++;
 
                                 continue;
                             }
@@ -280,7 +280,7 @@ namespace etf.dotsandboxes.cl160127d.AI
                                 bottom = true;
                                 box.BottomEdge = existingCanvasLines[i];
 
-                                surroundingEdges[1]++;
+                                surroundingEdges[direction]++;
 
                                 continue;
                             }
@@ -292,7 +292,7 @@ namespace etf.dotsandboxes.cl160127d.AI
                                 upper = true;
                                 box.UpperEdge = existingCanvasLines[i];
 
-                                surroundingEdges[1]++;
+                                surroundingEdges[direction]++;
 
                                 continue;
                             }
@@ -307,7 +307,7 @@ namespace etf.dotsandboxes.cl160127d.AI
                                 else
                                     box.RightEdge = existingCanvasLines[i];
 
-                                surroundingEdges[1]++;
+                                surroundingEdges[direction]++;
 
                                 continue;
                             }

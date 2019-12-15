@@ -145,8 +145,6 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
                     node.NonExistingLines.AddRange(parentNode.NonExistingLines);
                     node.NonExistingLines.Remove(parentNode.NonExistingLines[i]);
 
-                    Debug.WriteLine(node.ExistingLines.Count + " " + node.NonExistingLines.Count);
-
                     node.Boxes.AddRange(parentNode.Boxes);
                     List<Box> newBoxes = AICommon.TryClosingBoxes(parentNode.ExistingLines, (node.Player == MinimaxPlayerType.MAX ? Player.BLUE : Player.RED), parentNode.NonExistingLines[i], out int[] notUsed);
                     node.Boxes.AddRange(newBoxes);
@@ -154,9 +152,24 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
                     node.DeltaMove = parentNode.NonExistingLines[i];
                     #endregion
 
+                    /* don't go through this subtree if the delta move is drawing third edge
+                     * unless it the only move
+                     */
+                    AICommon.TryClosingBoxes(node.ExistingLines,
+                                            (node.Player == MinimaxPlayerType.MAX ? Player.BLUE : Player.RED),
+                                            node.DeltaMove,
+                                            out int[] surroundingEdges);
+
+                    if ((surroundingEdges[0] == 2 || surroundingEdges[1] == 2))
+                    {
+                        if (!(i == parentNode.NonExistingLines.Count - 1 && parentNode.Children.Count == 0))
+                        {
+                            Debug.WriteLine(node.DeltaMove.ToString() + " was thrown.");
+                            continue;
+                        }
+                    }
+
                     node.EstimationScore = ConstructTree(node, depth + 1, MinimaxPlayerType.MIN, alpha, beta);
-                    /*if (this is IntermediateMinimax && (node.EstimationScore == -1) || (node.EstimationScore == -2))
-                        continue;*/
 
                     bestValue = (bestValue > node.EstimationScore ? bestValue : node.EstimationScore);
                     alpha = (alpha > bestValue ? alpha : bestValue);
@@ -187,8 +200,6 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
                     node.NonExistingLines.AddRange(parentNode.NonExistingLines);
                     node.NonExistingLines.Remove(parentNode.NonExistingLines[i]);
 
-                    Debug.WriteLine(node.ExistingLines.Count + " " + node.NonExistingLines.Count);
-
                     node.Boxes.AddRange(parentNode.Boxes);
                     List<Box> newBoxes = AICommon.TryClosingBoxes(parentNode.ExistingLines, (node.Player == MinimaxPlayerType.MAX ? Player.BLUE : Player.RED), parentNode.NonExistingLines[i], out int[] notUsed);
                     node.Boxes.AddRange(newBoxes);
@@ -196,9 +207,24 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
                     node.DeltaMove = parentNode.NonExistingLines[i];
                     #endregion
 
+                    /* don't go through this subtree if the delta move is drawing third edge
+                     * unless it the only move
+                     */
+                    AICommon.TryClosingBoxes(node.ExistingLines,
+                                            (node.Player == MinimaxPlayerType.MAX ? Player.BLUE : Player.RED),
+                                            node.DeltaMove,
+                                            out int[] surroundingEdges);
+
+                    if ((surroundingEdges[0] == 2 || surroundingEdges[1] == 2))
+                    {
+                        if (!(i == parentNode.NonExistingLines.Count - 1 && parentNode.Children.Count == 0))
+                        {
+                            Debug.WriteLine(node.DeltaMove.ToString() + " was thrown.");
+                            continue;
+                        }
+                    }
+
                     node.EstimationScore = ConstructTree(node, depth + 1, MinimaxPlayerType.MAX, alpha, beta);
-                    /*if (this is IntermediateMinimax && (node.EstimationScore == -1) || (node.EstimationScore == -2))
-                        continue;*/
                         
                     bestValue = (bestValue < node.EstimationScore ? bestValue : node.EstimationScore);
                     beta = (beta < bestValue ? beta : bestValue);

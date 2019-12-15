@@ -44,7 +44,7 @@ namespace etf.dotsandboxes.cl160127d
             InitializeComponent();
 
             // TODO: for DEBUG only
-            IntermediateAI intermediateAI = new IntermediateAI(existingCanvasLines, nonExistingLines, boxes, Player.RED, 3);
+            IntermediateAI intermediateAI = new IntermediateAI(existingCanvasLines, nonExistingLines, boxes, Player.RED, 1);
             currentGame = new CurrentGame((int)tableSizeX.Value, (int)tableSizeY.Value, intermediateAI);
             intermediateAI.SetCurrentGame(currentGame);
 

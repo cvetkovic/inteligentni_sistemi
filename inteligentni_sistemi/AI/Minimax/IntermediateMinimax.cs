@@ -28,7 +28,7 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
 
             // select state in which user can close boxes
             if (newBoxes.Count > 0)
-                return newBoxes.Count;
+                return int.MaxValue - 1;
 
             // this state could lead opponent to close the box, hence negative estimation
             if (surroundingEdges[0] == 2 && surroundingEdges[1] == 2)
