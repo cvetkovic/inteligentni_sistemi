@@ -9,7 +9,8 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
         public ExpertMinimax(List<LineBetweenCircles> existingLines,
                              List<LineBetweenCircles> nonExistingLines,
                              List<Box> boxes,
-                             int maxTreeDepth) : base(existingLines, nonExistingLines, boxes, maxTreeDepth) { }
+                             Player whoAmI,
+                             int maxTreeDepth) : base(existingLines, nonExistingLines, boxes, whoAmI, maxTreeDepth) { }
 
         protected override int EstimationFunction(MinimaxTreeNode node)
         {

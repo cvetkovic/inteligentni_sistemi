@@ -12,15 +12,19 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
         public IntermediateMinimax(List<LineBetweenCircles> existingLines,
                                    List<LineBetweenCircles> nonExistingLines,
                                    List<Box> boxes,
-                                   int maxTreeDepth) : base(existingLines, nonExistingLines, boxes, maxTreeDepth) { }
+                                   Player whoAmI,
+                                   int maxTreeDepth) : base(existingLines, nonExistingLines, boxes, whoAmI, maxTreeDepth) { }
 
         protected override int EstimationFunction(MinimaxTreeNode node)
         {
-            // select terminating game state
-            if (node.NonExistingLines.Count == 0)
+            // winning condition for me
+            if (WhoHasMoreBoxes(node) == whoAmI && node.NonExistingLines.Count == 0)
                 return int.MaxValue;
 
-            List<Box> newBoxes = AICommon.TryClosingBoxes(node.ExistingLines, null, node.DeltaMove, out int[] surroundingEdges);
+            List<Box> newBoxes = AICommon.TryClosingBoxes(node.ExistingLines, 
+                                                          (node.Player == MinimaxPlayerType.MAX ? Player.BLUE : Player.RED), 
+                                                          node.DeltaMove, 
+                                                          out int[] surroundingEdges);
 
             // select state in which user can close boxes
             if (newBoxes.Count > 0)

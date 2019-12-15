@@ -1,6 +1,7 @@
 ﻿using etf.dotsandboxes.cl160127d.Game;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace etf.dotsandboxes.cl160127d.AI.Minimax
 {
@@ -11,6 +12,8 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
         private readonly List<LineBetweenCircles> initialExistingLines;
         private readonly List<LineBetweenCircles> initialNonExistingLines;
         private readonly List<Box> initialBoxes;
+
+        protected Player whoAmI;
 
         private MinimaxTreeNode rootNode;
         private int maxTreeDepth;
@@ -70,7 +73,12 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
 
             public override string ToString()
             {
-                return DeltaMove.ToString() + " - (" + EstimationScore + ")";
+                return DeltaMove.ToString() + " - " + PlayerName() + " - (" + EstimationScore + ")";
+            }
+
+            private string PlayerName()
+            {
+                return (Player == MinimaxPlayerType.MAX ? "MAX" : "MIN");
             }
         }
 
@@ -81,11 +89,13 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
         protected Minimax(List<LineBetweenCircles> existingLines,
                           List<LineBetweenCircles> nonExistingLines,
                           List<Box> boxes,
+                          Player whoAmI,
                           int maxTreeDepth)
         {
             this.initialExistingLines = existingLines;
             this.initialNonExistingLines = nonExistingLines;
             this.initialBoxes = boxes;
+            this.whoAmI = whoAmI;
             this.maxTreeDepth = maxTreeDepth;
 
             rootNode = ConstructRootNode();
@@ -135,8 +145,10 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
                     node.NonExistingLines.AddRange(parentNode.NonExistingLines);
                     node.NonExistingLines.Remove(parentNode.NonExistingLines[i]);
 
+                    Debug.WriteLine(node.ExistingLines.Count + " " + node.NonExistingLines.Count);
+
                     node.Boxes.AddRange(parentNode.Boxes);
-                    List<Box> newBoxes = AICommon.TryClosingBoxes(parentNode.ExistingLines, null, parentNode.NonExistingLines[i], out int[] notUsed);
+                    List<Box> newBoxes = AICommon.TryClosingBoxes(parentNode.ExistingLines, (node.Player == MinimaxPlayerType.MAX ? Player.BLUE : Player.RED), parentNode.NonExistingLines[i], out int[] notUsed);
                     node.Boxes.AddRange(newBoxes);
 
                     node.DeltaMove = parentNode.NonExistingLines[i];
@@ -148,8 +160,8 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
 
                     bestValue = (bestValue > node.EstimationScore ? bestValue : node.EstimationScore);
                     alpha = (alpha > bestValue ? alpha : bestValue);
-                    if (beta <= alpha)
-                        break;
+                    /*if (beta <= alpha)
+                        break;*/
 
                     parentNode.Children.Add(node);
                 }
@@ -175,8 +187,10 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
                     node.NonExistingLines.AddRange(parentNode.NonExistingLines);
                     node.NonExistingLines.Remove(parentNode.NonExistingLines[i]);
 
+                    Debug.WriteLine(node.ExistingLines.Count + " " + node.NonExistingLines.Count);
+
                     node.Boxes.AddRange(parentNode.Boxes);
-                    List<Box> newBoxes = AICommon.TryClosingBoxes(parentNode.ExistingLines, null, parentNode.NonExistingLines[i], out int[] notUsed);
+                    List<Box> newBoxes = AICommon.TryClosingBoxes(parentNode.ExistingLines, (node.Player == MinimaxPlayerType.MAX ? Player.BLUE : Player.RED), parentNode.NonExistingLines[i], out int[] notUsed);
                     node.Boxes.AddRange(newBoxes);
 
                     node.DeltaMove = parentNode.NonExistingLines[i];
@@ -188,8 +202,8 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
                         
                     bestValue = (bestValue < node.EstimationScore ? bestValue : node.EstimationScore);
                     beta = (beta < bestValue ? beta : bestValue);
-                    if (beta <= alpha)
-                        break;
+                    /*if (beta <= alpha)
+                        break;*/
 
                     parentNode.Children.Add(node);
                 }
@@ -229,6 +243,20 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
             {
                 return rootNode;
             }
+        }
+
+        protected Player WhoHasMoreBoxes(MinimaxTreeNode node)
+        {
+            int blue = 0;
+            int red = 0;
+
+            for (int i = 0; i < node.Boxes.Count; i++)
+                if (node.Boxes[i].ClosingPlayer == Player.BLUE)
+                    blue++;
+                else
+                    red++;
+
+            return (blue > red ? Player.BLUE : Player.RED);
         }
 
         #endregion

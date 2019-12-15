@@ -12,25 +12,28 @@ namespace etf.dotsandboxes.cl160127d.AI
     {
         private int minimaxDepth;
         private ExpertMinimax minimax;
+        private Player whoAmI;
 
-        public ExpertAI(List<LineBetweenCircles> existingMoves,
-                        List<LineBetweenCircles> nonExistingMoves,
-                        List<Box> boxes,
-                        int minimaxDepth) : base(existingMoves, nonExistingMoves, boxes)
+        public ExpertAI(List<LineBetweenCircles> existingLines,
+                                   List<LineBetweenCircles> nonExistingLines,
+                                   List<Box> boxes,
+                                   Player whoAmI,
+                                   int minimaxDepth) : base(existingLines, nonExistingLines, boxes)
         {
             this.minimaxDepth = minimaxDepth;
+            this.whoAmI = whoAmI;
         }
 
         protected override LineBetweenCircles TurnAction()
         {
-            minimax = new ExpertMinimax(existingMoves, nonExistingMoves, boxes, minimaxDepth);
+            minimax = new ExpertMinimax(existingMoves, nonExistingMoves, boxes, whoAmI, minimaxDepth);
 
             return minimax.GetBestMove();
         }
 
         public override Minimax.Minimax.MinimaxTreeNode GetMinimaxTreeNode()
         {
-            minimax = new ExpertMinimax(existingMoves, nonExistingMoves, boxes, minimaxDepth);
+            minimax = new ExpertMinimax(existingMoves, nonExistingMoves, boxes, whoAmI, minimaxDepth);
 
             return minimax.RootNode;
         }

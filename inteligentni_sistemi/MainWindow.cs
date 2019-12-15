@@ -44,7 +44,7 @@ namespace etf.dotsandboxes.cl160127d
             InitializeComponent();
 
             // TODO: for DEBUG only
-            IntermediateAI intermediateAI = new IntermediateAI(existingCanvasLines, nonExistingLines, boxes, 3);
+            IntermediateAI intermediateAI = new IntermediateAI(existingCanvasLines, nonExistingLines, boxes, Player.RED, 3);
             currentGame = new CurrentGame((int)tableSizeX.Value, (int)tableSizeY.Value, intermediateAI);
             intermediateAI.SetCurrentGame(currentGame);
 
@@ -201,7 +201,7 @@ namespace etf.dotsandboxes.cl160127d
                     (Math.Abs(e.Y - minPoint.Y) <= (verticalSpacingBetweenCircles + circleDiameter) / 2))
                 {
                     VTuple<int, int> coordinatesFrom = (VTuple<int, int>)((DictionaryEntry)min).Key;
-                    Debug.WriteLine("min coordinates (" + coordinatesFrom.Item1 + ", " + coordinatesFrom.Item2 + ")");
+                    //Debug.WriteLine("min coordinates (" + coordinatesFrom.Item1 + ", " + coordinatesFrom.Item2 + ")");
 
                     int dx = 0, dy = 0;
                     bool valid = false;
@@ -254,7 +254,7 @@ namespace etf.dotsandboxes.cl160127d
                     {
                         VTuple<int, int> lookingFor = new VTuple<int, int>(coordinatesFrom.Item1 + dx, coordinatesFrom.Item2 + dy);
 
-                        Debug.WriteLine("Looking for (" + (coordinatesFrom.Item1 + dx) + ", " + (coordinatesFrom.Item2 + dy) + ")");
+                        //Debug.WriteLine("Looking for (" + (coordinatesFrom.Item1 + dx) + ", " + (coordinatesFrom.Item2 + dy) + ")");
 
                         if (circleCenters[lookingFor] != null)
                         {
@@ -334,11 +334,11 @@ namespace etf.dotsandboxes.cl160127d
 
                         break;
                     case 1:
-                        opponent = new IntermediateAI(existingCanvasLines, nonExistingLines, boxes, (int)aiTreeDepth.Value);
+                        opponent = new IntermediateAI(existingCanvasLines, nonExistingLines, boxes, Player.RED, (int)aiTreeDepth.Value);
 
                         break;
                     case 2:
-                        opponent = new ExpertAI(existingCanvasLines, nonExistingLines, boxes, (int)aiTreeDepth.Value);
+                        opponent = new ExpertAI(existingCanvasLines, nonExistingLines, boxes, Player.RED, (int)aiTreeDepth.Value);
 
                         break;
                     default:
@@ -408,7 +408,7 @@ namespace etf.dotsandboxes.cl160127d
             turnRichTextBox.ScrollToCaret();
             ///////////////////////////////////
 
-            List<Box> newBoxes = AICommon.TryClosingBoxes(existingCanvasLines, currentGame, line, out int[] notUsed);
+            List<Box> newBoxes = AICommon.TryClosingBoxes(existingCanvasLines, currentGame.Turn, line, out int[] notUsed);
             boxes.AddRange(newBoxes);
             currentGame.Score[(int)currentGame.Turn] += newBoxes.Count;
 

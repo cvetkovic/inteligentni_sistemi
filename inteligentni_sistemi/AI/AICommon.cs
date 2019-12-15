@@ -8,7 +8,7 @@ namespace etf.dotsandboxes.cl160127d.AI
     class AICommon
     {
         public static List<Box> TryClosingBoxes(List<LineBetweenCircles> existingCanvasLines,
-                                                CurrentGame currentGame,
+                                                Player player,
                                                 LineBetweenCircles line,
                                                 out int[] surroundingEdges)
         {
@@ -162,8 +162,7 @@ namespace etf.dotsandboxes.cl160127d.AI
                     // add to list of boxes
                     if (upperLeft && upperUpper && upperRight)
                     {
-                        if (currentGame != null)
-                            box.ClosingPlayer = currentGame.Turn;
+                        box.ClosingPlayer = player;
 
                         if (direction == 0)
                         {
@@ -317,8 +316,7 @@ namespace etf.dotsandboxes.cl160127d.AI
 
                     if (upper && left && bottom)
                     {
-                        if (currentGame != null)
-                            box.ClosingPlayer = currentGame.Turn;
+                        box.ClosingPlayer = player;
 
                         if (direction == 0)
                         {
@@ -347,10 +345,10 @@ namespace etf.dotsandboxes.cl160127d.AI
 
         public static LineBetweenCircles FindBoxClosingEdge(List<LineBetweenCircles> existingCanvasLines,
             List<LineBetweenCircles> nonExistingCanvasLines,
-            CurrentGame currentGame)
+            Player player)
         {
             foreach (LineBetweenCircles line in nonExistingCanvasLines)
-                if (TryClosingBoxes(existingCanvasLines, currentGame, line, out int[] notUsed).Count > 0)
+                if (TryClosingBoxes(existingCanvasLines, player, line, out int[] notUsed).Count > 0)
                     return line;
 
             return null;
