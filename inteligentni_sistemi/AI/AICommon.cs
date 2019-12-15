@@ -7,14 +7,12 @@ namespace etf.dotsandboxes.cl160127d.AI
 {
     class AICommon
     {
-        public static int TryClosingBoxes(List<LineBetweenCircles> existingCanvasLines,
-                                          CurrentGame currentGame,
-                                          List<Box> boxes,
-                                          LineBetweenCircles line,
-                                          out int[] surroundingEdges,
-                                          bool addToList = false)
+        public static List<Box> TryClosingBoxes(List<LineBetweenCircles> existingCanvasLines,
+                                                CurrentGame currentGame,
+                                                LineBetweenCircles line,
+                                                out int[] surroundingEdges)
         {
-            int createdBoxes = 0;
+            List<Box> result = new List<Box>();
 
             surroundingEdges = new int[2];
             surroundingEdges[0] = surroundingEdges[1] = 0;
@@ -181,9 +179,7 @@ namespace etf.dotsandboxes.cl160127d.AI
                             box.BottomRight = (box.BottomEdge.From.X > box.BottomEdge.To.X ? box.BottomEdge.From : box.BottomEdge.To);
                         }
 
-                        if (addToList)
-                            boxes.Add(box);
-                        createdBoxes++;
+                        result.Add(box);
                     }
                 }
             }
@@ -339,25 +335,22 @@ namespace etf.dotsandboxes.cl160127d.AI
                             box.BottomRight = (box.BottomEdge.From.X > box.BottomEdge.To.X ? box.BottomEdge.From : box.BottomEdge.To);
                         }
 
-                        if (addToList)
-                            boxes.Add(box);
-                        createdBoxes++;
+                        result.Add(box);
                     }
                 }
             }
             else
                 throw new Exception("Diagonal connections now allowed.");
 
-            return createdBoxes;
+            return result;
         }
 
         public static LineBetweenCircles FindBoxClosingEdge(List<LineBetweenCircles> existingCanvasLines,
             List<LineBetweenCircles> nonExistingCanvasLines,
-            CurrentGame currentGame,
-            List<Box> boxes)
+            CurrentGame currentGame)
         {
             foreach (LineBetweenCircles line in nonExistingCanvasLines)
-                if (TryClosingBoxes(existingCanvasLines, currentGame, boxes, line, out int[] notUsed) > 0)
+                if (TryClosingBoxes(existingCanvasLines, currentGame, line, out int[] notUsed).Count > 0)
                     return line;
 
             return null;

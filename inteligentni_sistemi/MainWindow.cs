@@ -21,7 +21,7 @@ namespace etf.dotsandboxes.cl160127d
         private int horizontalSpacingBetweenCircles = 93;
         private int verticalSpacingBetweenCircles = 77;
         private int circleDiameter = 25;
-        private const int LINE_WIDTH = 8;
+        public const int LINE_WIDTH = 8;
 
         // not game data structures
         private LineBetweenCircles mouseHoverLine;
@@ -44,11 +44,17 @@ namespace etf.dotsandboxes.cl160127d
             InitializeComponent();
 
             // TODO: for DEBUG only
-            IntermediateAI intermediateAI = new IntermediateAI(existingCanvasLines, nonExistingLines, boxes, 2);
+            IntermediateAI intermediateAI = new IntermediateAI(existingCanvasLines, nonExistingLines, boxes, 3);
             currentGame = new CurrentGame((int)tableSizeX.Value, (int)tableSizeY.Value, intermediateAI);
             intermediateAI.SetCurrentGame(currentGame);
 
-            CalculateCanvasParameters();    // don't remove this
+            Logic.CalculateCanvasParameters(currentGame.TableSizeX,
+                                            currentGame.TableSizeY,
+                                            canvas.Width,
+                                            canvas.Height,
+                                            out horizontalSpacingBetweenCircles, 
+                                            out verticalSpacingBetweenCircles, 
+                                            out circleDiameter);    // don't remove this
             GUI_GameSettingChanged(null, null);
         }
 
@@ -89,6 +95,7 @@ namespace etf.dotsandboxes.cl160127d
         {
             tableSizeX.Enabled = tableSizeY.Enabled = humanVsHumanRadio.Enabled = humanVsPcRadio.Enabled = pcVsPcRadio.Enabled = (currentGame.GameOver);
             aiDifficulty.Enabled = aiTreeDepth.Enabled = aiMode.Enabled = (currentGame.GameOver);
+            aiMinimaxTree.Enabled = (!currentGame.GameOver && currentGame.Opponent != null);
 
             blueTurnIndicator.Visible = (currentGame.Turn == Player.BLUE);
             redTurnIndicator.Visible = (currentGame.Turn == Player.RED);
@@ -121,7 +128,13 @@ namespace etf.dotsandboxes.cl160127d
             Brush[] rectangleBrush = { Brushes.Blue, Brushes.Red };
 
             // paint the background
-            CalculateCanvasParameters();
+            Logic.CalculateCanvasParameters(currentGame.TableSizeX,
+                                            currentGame.TableSizeY,
+                                            canvas.Width,
+                                            canvas.Height,
+                                            out horizontalSpacingBetweenCircles,
+                                            out verticalSpacingBetweenCircles,
+                                            out circleDiameter);
             circleCenters.Clear();
             g.Clear(Color.SkyBlue);
 
@@ -340,7 +353,13 @@ namespace etf.dotsandboxes.cl160127d
             if (currentGame.Opponent != null)
                 currentGame.Opponent.SetCurrentGame(currentGame);
 
-            CalculateCanvasParameters();
+            Logic.CalculateCanvasParameters(currentGame.TableSizeX,
+                                            currentGame.TableSizeY,
+                                            canvas.Width,
+                                            canvas.Height,
+                                            out horizontalSpacingBetweenCircles,
+                                            out verticalSpacingBetweenCircles,
+                                            out circleDiameter);
 
             // clearing existing data structures
             mouseHoverLine = null;
@@ -366,22 +385,7 @@ namespace etf.dotsandboxes.cl160127d
             else
                 currentGame.Turn = Player.BLUE;
         }
-
-        private void CalculateCanvasParameters()
-        {
-            horizontalSpacingBetweenCircles = (canvas.Width - currentGame.TableSizeY * circleDiameter) / (currentGame.TableSizeY + 1);
-            verticalSpacingBetweenCircles = (canvas.Height - currentGame.TableSizeX * circleDiameter) / (currentGame.TableSizeX + 1);
-
-            if (tableSizeX.Value <= 4 && tableSizeY.Value <= 4)
-                circleDiameter = 35;
-            else if ((tableSizeX.Value > 4 && tableSizeY.Value > 4) && (tableSizeX.Value < 10 && tableSizeY.Value < 10))
-                circleDiameter = 25;
-            else if (tableSizeX.Value >= 10 && tableSizeY.Value >= 10)
-                circleDiameter = 15;
-            else
-                circleDiameter = 25;
-        }
-
+        
         private void FinishTurn(LineBetweenCircles line)
         {
             if (line == null)
@@ -392,7 +396,7 @@ namespace etf.dotsandboxes.cl160127d
                 return;
 
             ///////////////////////////////////
-            string log = GenerateLogMessage(line);
+            string log = line.ToString();
 
             int startPosition = turnRichTextBox.Text.Length;
             string textToAppend = log + Environment.NewLine;
@@ -404,10 +408,11 @@ namespace etf.dotsandboxes.cl160127d
             turnRichTextBox.ScrollToCaret();
             ///////////////////////////////////
 
-            int numberOfNewBoxes = AICommon.TryClosingBoxes(existingCanvasLines, currentGame, boxes, line, out int[] notUsed, true);
-            currentGame.Score[(int)currentGame.Turn] += numberOfNewBoxes;
+            List<Box> newBoxes = AICommon.TryClosingBoxes(existingCanvasLines, currentGame, line, out int[] notUsed);
+            boxes.AddRange(newBoxes);
+            currentGame.Score[(int)currentGame.Turn] += newBoxes.Count;
 
-            if (numberOfNewBoxes > 0)
+            if (newBoxes.Count > 0)
             {
                 canvas.Refresh();
                 UpdateGUI();
@@ -425,7 +430,7 @@ namespace etf.dotsandboxes.cl160127d
             {
                 if (currentGame.Turn == Player.BLUE)
                 {
-                    if (numberOfNewBoxes == 0)
+                    if (newBoxes.Count == 0)
                     {
                         SwitchTurn();
 
@@ -437,9 +442,9 @@ namespace etf.dotsandboxes.cl160127d
                 }
                 else
                 {
-                    if (numberOfNewBoxes == 0)
+                    if (newBoxes.Count == 0)
                         SwitchTurn();
-                    else if (numberOfNewBoxes > 0 && currentGame.Opponent != null)
+                    else if (newBoxes.Count > 0 && currentGame.Opponent != null)
                     {
                         UpdateGUI();
                         Thread.Sleep(1000);
@@ -515,16 +520,6 @@ namespace etf.dotsandboxes.cl160127d
 
         #region Game State Load/Save
 
-        private char TranslateAxisToLetter(int coordinate)
-        {
-            return (char)(coordinate + 65);
-        }
-
-        private int TranslateLetterToAxis(char letter)
-        {
-            return (int)(letter - 65);
-        }
-
         private void SaveGameState(string location)
         {
             using (StreamWriter file = new StreamWriter(location))
@@ -534,26 +529,12 @@ namespace etf.dotsandboxes.cl160127d
 
                 // writing moves
                 foreach (LineBetweenCircles line in existingCanvasLines)
-                    file.WriteLine(GenerateLogMessage(line));
+                    file.WriteLine(line.ToString());
             }
-        }
-
-        private string GenerateLogMessage(LineBetweenCircles line)
-        {
-            string s = "";
-
-            if (line.From.X == line.To.X) // vertical line
-                s = string.Format("{0}{1}", TranslateAxisToLetter(line.CoordinateFrom.Item1 < line.CoordinateTo.Item1 ? line.CoordinateFrom.Item1 : line.CoordinateTo.Item1), (line.CoordinateFrom.Item2 < line.CoordinateTo.Item2 ? line.CoordinateFrom.Item2 : line.CoordinateTo.Item2));
-            else                        // horizontal line
-                s = string.Format("{0}{1}", (line.CoordinateFrom.Item1 < line.CoordinateTo.Item1 ? line.CoordinateFrom.Item1 : line.CoordinateTo.Item1), TranslateAxisToLetter(line.CoordinateFrom.Item2 < line.CoordinateTo.Item2 ? line.CoordinateFrom.Item2 : line.CoordinateTo.Item2));
-
-            return s;
         }
 
         private void LoadGameState(string location)
         {
-            //NewGame_Click();
-
             using (StreamReader file = new StreamReader(location))
             {
                 string firstLine = file.ReadLine();
@@ -561,7 +542,13 @@ namespace etf.dotsandboxes.cl160127d
                 int sizeY = Int32.Parse(firstLine.Substring(firstLine.IndexOf(' ') + 1));
 
                 currentGame = new CurrentGame(sizeX, sizeY);
-                CalculateCanvasParameters();
+                Logic.CalculateCanvasParameters(currentGame.TableSizeX,
+                                            currentGame.TableSizeY,
+                                            canvas.Width,
+                                            canvas.Height,
+                                            out horizontalSpacingBetweenCircles,
+                                            out verticalSpacingBetweenCircles,
+                                            out circleDiameter);
 
                 existingCanvasLines.Clear();
                 nonExistingLines.Clear();
@@ -615,14 +602,14 @@ namespace etf.dotsandboxes.cl160127d
 
             if (Int32.TryParse(first, out tmp1))                // horizontal line
             {
-                tmp2 = TranslateLetterToAxis(second[0]);
+                tmp2 = Miscellaneous.TranslateLetterToAxis(second[0]);
 
                 line.CoordinateFrom = new VTuple<int, int>(tmp1, tmp2);
                 line.CoordinateTo = new VTuple<int, int>(tmp1, tmp2 + 1);
             }
             else                                                // vertical line
             {
-                tmp1 = TranslateLetterToAxis(first[0]);
+                tmp1 = Miscellaneous.TranslateLetterToAxis(first[0]);
                 tmp2 = Int32.Parse(second);
 
                 line.CoordinateFrom = new VTuple<int, int>(tmp1, tmp2);
@@ -638,5 +625,16 @@ namespace etf.dotsandboxes.cl160127d
 
         #endregion
 
+        private void AiMinimaxTree_Click(object sender, EventArgs e)
+        {
+            if (currentGame.Opponent == null)
+                throw new Exception("Not in proper mode to show minimax turn table.");
+            else if (currentGame.Opponent is BeginnerAI)
+                throw new Exception("Beginner opponent does not utilize minimax algorithm.");
+
+            new MinimaxOverview(currentGame.Opponent.GetMinimaxTreeNode(),
+                                currentGame.TableSizeX,
+                                currentGame.TableSizeY).ShowDialog();
+        }
     }
 }

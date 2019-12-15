@@ -11,19 +11,20 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
     {
         public IntermediateMinimax(List<LineBetweenCircles> existingLines,
                                    List<LineBetweenCircles> nonExistingLines,
-                                   int maxTreeDepth) : base(existingLines, nonExistingLines, maxTreeDepth) { }
+                                   List<Box> boxes,
+                                   int maxTreeDepth) : base(existingLines, nonExistingLines, boxes, maxTreeDepth) { }
 
-        protected override int EstimationFunction(TreeNode node)
+        protected override int EstimationFunction(MinimaxTreeNode node)
         {
             // select terminating game state
             if (node.NonExistingLines.Count == 0)
                 return int.MaxValue;
 
-            int canCloseBoxes = AICommon.TryClosingBoxes(node.ExistingLines, null, null, node.DeltaMove, out int[] surroundingEdges);
+            List<Box> newBoxes = AICommon.TryClosingBoxes(node.ExistingLines, null, node.DeltaMove, out int[] surroundingEdges);
 
             // select state in which user can close boxes
-            if (canCloseBoxes > 0)
-                return canCloseBoxes;
+            if (newBoxes.Count > 0)
+                return newBoxes.Count;
 
             // this state could lead opponent to close the box, hence negative estimation
             if (surroundingEdges[0] == 2 && surroundingEdges[1] == 2)

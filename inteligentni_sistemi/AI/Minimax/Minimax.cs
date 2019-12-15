@@ -10,8 +10,9 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
 
         private readonly List<LineBetweenCircles> initialExistingLines;
         private readonly List<LineBetweenCircles> initialNonExistingLines;
+        private readonly List<Box> initialBoxes;
 
-        private TreeNode rootNode;
+        private MinimaxTreeNode rootNode;
         private int maxTreeDepth;
 
         #endregion
@@ -24,14 +25,15 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
             MIN = 1
         }
 
-        public class TreeNode
+        public class MinimaxTreeNode
         {
             private List<LineBetweenCircles> existingLines = new List<LineBetweenCircles>();
             private List<LineBetweenCircles> nonExistingLines = new List<LineBetweenCircles>();
-            private List<TreeNode> children = new List<TreeNode>();
+            private List<Box> boxes = new List<Box>();
+            private List<MinimaxTreeNode> children = new List<MinimaxTreeNode>();
 
             public MinimaxPlayerType Player { get; set; }
-            public List<TreeNode> Children
+            public List<MinimaxTreeNode> Children
             {
                 get
                 {
@@ -57,6 +59,19 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
                     return nonExistingLines;
                 }
             }
+
+            public List<Box> Boxes
+            {
+                get
+                {
+                    return boxes;
+                }
+            }
+
+            public override string ToString()
+            {
+                return DeltaMove.ToString() + " - (" + EstimationScore + ")";
+            }
         }
 
         #endregion
@@ -65,10 +80,12 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
 
         protected Minimax(List<LineBetweenCircles> existingLines,
                           List<LineBetweenCircles> nonExistingLines,
+                          List<Box> boxes,
                           int maxTreeDepth)
         {
             this.initialExistingLines = existingLines;
             this.initialNonExistingLines = nonExistingLines;
+            this.initialBoxes = boxes;
             this.maxTreeDepth = maxTreeDepth;
 
             rootNode = ConstructRootNode();
@@ -76,22 +93,25 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
 
         #endregion
 
-        private TreeNode ConstructRootNode()
+        #region Base Class Methods
+
+        private MinimaxTreeNode ConstructRootNode()
         {
-            TreeNode node = new TreeNode();
+            MinimaxTreeNode node = new MinimaxTreeNode();
 
             node.EstimationScore = 0;
             node.Player = MinimaxPlayerType.MIN;
 
             node.ExistingLines.AddRange(initialExistingLines);
             node.NonExistingLines.AddRange(initialNonExistingLines);
+            node.Boxes.AddRange(initialBoxes);
 
             ConstructTree(node, 0, MinimaxPlayerType.MIN, int.MinValue, int.MaxValue);
 
             return node;
         }
 
-        private int ConstructTree(TreeNode parentNode, int depth, MinimaxPlayerType minimaxPlayer, int alpha, int beta)
+        private int ConstructTree(MinimaxTreeNode parentNode, int depth, MinimaxPlayerType minimaxPlayer, int alpha, int beta)
         {
             // return estimation function if max tree depth reached or game is in finished state
             if (depth == maxTreeDepth || parentNode.NonExistingLines.Count == 0)
@@ -104,7 +124,7 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
                 for (int i = 0; i < parentNode.NonExistingLines.Count; i++)
                 {
                     #region New Node Creation
-                    TreeNode node = new TreeNode();
+                    MinimaxTreeNode node = new MinimaxTreeNode();
 
                     // calculate estimation function only for leaf nodes
                     node.Player = (parentNode.Player == MinimaxPlayerType.MAX ? MinimaxPlayerType.MIN : MinimaxPlayerType.MAX);
@@ -114,6 +134,11 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
 
                     node.NonExistingLines.AddRange(parentNode.NonExistingLines);
                     node.NonExistingLines.Remove(parentNode.NonExistingLines[i]);
+
+                    if(parentNode.Boxes.Count > 0)
+                        node.Boxes.AddRange(parentNode.Boxes);
+                    List<Box> newBoxes = AICommon.TryClosingBoxes(parentNode.ExistingLines, null, parentNode.NonExistingLines[i], out int[] notUsed);
+                    node.Boxes.AddRange(newBoxes);
 
                     node.DeltaMove = parentNode.NonExistingLines[i];
                     #endregion
@@ -140,7 +165,7 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
                 for (int i = 0; i < parentNode.NonExistingLines.Count; i++)
                 {
                     #region New Node Creation
-                    TreeNode node = new TreeNode();
+                    MinimaxTreeNode node = new MinimaxTreeNode();
 
                     // calculate estimation function only for leaf nodes
                     node.Player = (parentNode.Player == MinimaxPlayerType.MAX ? MinimaxPlayerType.MIN : MinimaxPlayerType.MAX);
@@ -150,6 +175,11 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
 
                     node.NonExistingLines.AddRange(parentNode.NonExistingLines);
                     node.NonExistingLines.Remove(parentNode.NonExistingLines[i]);
+
+                    if (parentNode.Boxes.Count > 0)
+                        node.Boxes.AddRange(parentNode.Boxes);
+                    List<Box> newBoxes = AICommon.TryClosingBoxes(parentNode.ExistingLines, null, parentNode.NonExistingLines[i], out int[] notUsed);
+                    node.Boxes.AddRange(newBoxes);
 
                     node.DeltaMove = parentNode.NonExistingLines[i];
                     #endregion
@@ -195,6 +225,20 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
                 return null;
         }
 
-        protected abstract int EstimationFunction(TreeNode node);
+        public MinimaxTreeNode RootNode
+        {
+            get
+            {
+                return rootNode;
+            }
+        }
+
+        #endregion
+
+        #region Abstract Methods
+
+        protected abstract int EstimationFunction(MinimaxTreeNode node);
+
+        #endregion
     }
 }

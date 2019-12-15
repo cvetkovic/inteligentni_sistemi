@@ -11,6 +11,7 @@ namespace etf.dotsandboxes.cl160127d.AI
     class IntermediateAI : BasePlayer
     {
         private int minimaxDepth;
+        private IntermediateMinimax minimax;
 
         public IntermediateAI(List<LineBetweenCircles> existingMoves,
                               List<LineBetweenCircles> nonExistingMoves,
@@ -22,9 +23,14 @@ namespace etf.dotsandboxes.cl160127d.AI
 
         protected override LineBetweenCircles TurnAction()
         {
-            IntermediateMinimax minimax = new IntermediateMinimax(existingMoves, nonExistingMoves, minimaxDepth);
+            minimax = new IntermediateMinimax(existingMoves, nonExistingMoves, boxes, minimaxDepth);
 
             return minimax.GetBestMove();
+        }
+
+        public override Minimax.Minimax.MinimaxTreeNode GetMinimaxTreeNode()
+        {
+            return minimax.RootNode;
         }
     }
 }

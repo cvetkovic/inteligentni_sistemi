@@ -18,7 +18,7 @@ namespace etf.dotsandboxes.cl160127d.AI
         {
             LineBetweenCircles closingEdge;
 
-            if ((closingEdge = AICommon.FindBoxClosingEdge(existingMoves, nonExistingMoves, currentGame, boxes)) != null)
+            if ((closingEdge = AICommon.FindBoxClosingEdge(existingMoves, nonExistingMoves, currentGame)) != null)
                 return closingEdge;
             else
             {

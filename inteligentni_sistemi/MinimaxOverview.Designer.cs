@@ -42,10 +42,12 @@
             // 
             // canvas
             // 
+            this.canvas.BackColor = System.Drawing.SystemColors.GradientActiveCaption;
             this.canvas.Location = new System.Drawing.Point(225, 12);
             this.canvas.Name = "canvas";
             this.canvas.Size = new System.Drawing.Size(600, 600);
             this.canvas.TabIndex = 1;
+            this.canvas.Paint += new System.Windows.Forms.PaintEventHandler(this.Canvas_Paint);
             // 
             // MinimaxOverview
             // 

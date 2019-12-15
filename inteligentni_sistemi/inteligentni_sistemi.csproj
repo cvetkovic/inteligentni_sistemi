@@ -54,6 +54,7 @@
     <Compile Include="Game\Box.cs" />
     <Compile Include="Game\CurrentGame.cs" />
     <Compile Include="Game\LineBetweenCircles.cs" />
+    <Compile Include="Game\Logic.cs" />
     <Compile Include="Game\Player.cs" />
     <Compile Include="AI\BasePlayer.cs" />
     <Compile Include="MainWindow.cs">

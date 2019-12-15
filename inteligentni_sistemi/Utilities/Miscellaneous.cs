@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace etf.dotsandboxes.cl160127d.Utilities
 {
@@ -23,5 +21,16 @@ namespace etf.dotsandboxes.cl160127d.Utilities
 
             inputList.AddRange(randomList);
         }
+
+        public static char TranslateAxisToLetter(int coordinate)
+        {
+            return (char)(coordinate + 65);
+        }
+
+        public static int TranslateLetterToAxis(char letter)
+        {
+            return (int)(letter - 65);
+        }
+
     }
 }

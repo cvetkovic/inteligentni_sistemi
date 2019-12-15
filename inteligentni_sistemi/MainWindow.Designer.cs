@@ -36,6 +36,7 @@
             this.scoreLabel = new System.Windows.Forms.Label();
             this.canvas = new System.Windows.Forms.Panel();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
+            this.aiMinimaxTree = new System.Windows.Forms.Button();
             this.label11 = new System.Windows.Forms.Label();
             this.aiMode = new System.Windows.Forms.ComboBox();
             this.aiTreeDepth = new System.Windows.Forms.NumericUpDown();
@@ -141,6 +142,7 @@
             // 
             // groupBox2
             // 
+            this.groupBox2.Controls.Add(this.aiMinimaxTree);
             this.groupBox2.Controls.Add(this.label11);
             this.groupBox2.Controls.Add(this.aiMode);
             this.groupBox2.Controls.Add(this.aiTreeDepth);
@@ -164,6 +166,17 @@
             this.groupBox2.TabIndex = 2;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Podešavanja igre";
+            // 
+            // aiMinimaxTree
+            // 
+            this.aiMinimaxTree.Enabled = false;
+            this.aiMinimaxTree.Location = new System.Drawing.Point(183, 292);
+            this.aiMinimaxTree.Name = "aiMinimaxTree";
+            this.aiMinimaxTree.Size = new System.Drawing.Size(149, 31);
+            this.aiMinimaxTree.TabIndex = 20;
+            this.aiMinimaxTree.Text = "Stablo igre";
+            this.aiMinimaxTree.UseVisualStyleBackColor = true;
+            this.aiMinimaxTree.Click += new System.EventHandler(this.AiMinimaxTree_Click);
             // 
             // label11
             // 
@@ -456,6 +469,7 @@
         private System.Windows.Forms.Button saveGameState;
         private System.Windows.Forms.Label label11;
         private System.Windows.Forms.ComboBox aiMode;
+        private System.Windows.Forms.Button aiMinimaxTree;
     }
 }
 

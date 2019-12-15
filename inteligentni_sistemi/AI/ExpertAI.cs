@@ -11,6 +11,7 @@ namespace etf.dotsandboxes.cl160127d.AI
     class ExpertAI : BasePlayer
     {
         private int minimaxDepth;
+        private ExpertMinimax minimax;
 
         public ExpertAI(List<LineBetweenCircles> existingMoves,
                         List<LineBetweenCircles> nonExistingMoves,
@@ -22,9 +23,14 @@ namespace etf.dotsandboxes.cl160127d.AI
 
         protected override LineBetweenCircles TurnAction()
         {
-            ExpertMinimax minimax = new ExpertMinimax(existingMoves, nonExistingMoves, minimaxDepth);
+            minimax = new ExpertMinimax(existingMoves, nonExistingMoves, boxes, minimaxDepth);
 
             return minimax.GetBestMove();
+        }
+
+        public override Minimax.Minimax.MinimaxTreeNode GetMinimaxTreeNode()
+        {
+            return minimax.RootNode;
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using etf.dotsandboxes.cl160127d.Game;
+﻿using static etf.dotsandboxes.cl160127d.AI.Minimax.Minimax;
+using etf.dotsandboxes.cl160127d.Game;
 using System;
 using System.Collections.Generic;
 
@@ -42,5 +43,10 @@ namespace etf.dotsandboxes.cl160127d.AI
         }
 
         protected abstract LineBetweenCircles TurnAction();
+
+        public virtual MinimaxTreeNode GetMinimaxTreeNode()
+        {
+            return null;
+        }
     }
 }
