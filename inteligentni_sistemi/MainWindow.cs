@@ -347,6 +347,7 @@ namespace etf.dotsandboxes.cl160127d
             existingCanvasLines.Clear();
             boxes.Clear();
             circleCenters.Clear();
+            turnRichTextBox.Clear();
 
             UpdateGUI();
             canvas.Refresh();
@@ -519,6 +520,11 @@ namespace etf.dotsandboxes.cl160127d
             return (char)(coordinate + 65);
         }
 
+        private int TranslateLetterToAxis(char letter)
+        {
+            return (int)(letter - 65);
+        }
+
         private void SaveGameState(string location)
         {
             using (StreamWriter file = new StreamWriter(location))
@@ -546,7 +552,7 @@ namespace etf.dotsandboxes.cl160127d
 
         private void LoadGameState(string location)
         {
-            throw new NotImplementedException();
+            //NewGame_Click();
 
             using (StreamReader file = new StreamReader(location))
             {
@@ -554,14 +560,80 @@ namespace etf.dotsandboxes.cl160127d
                 int sizeX = Int32.Parse(firstLine.Substring(0, firstLine.IndexOf(' ')));
                 int sizeY = Int32.Parse(firstLine.Substring(firstLine.IndexOf(' ') + 1));
 
-                CurrentGame currentGame = new CurrentGame(sizeX, sizeY);
+                currentGame = new CurrentGame(sizeX, sizeY);
+                CalculateCanvasParameters();
+
+                existingCanvasLines.Clear();
+                nonExistingLines.Clear();
+                boxes.Clear();
+                canvas.Refresh();        // needed to create circleCenters
+                turnRichTextBox.Clear();
+                CreateNonExistingMovesList();
+
+                tableSizeX.Value = sizeX;
+                tableSizeY.Value = sizeY;
+                humanVsHumanRadio.Checked = true;
+                aiDifficulty.SelectedIndex = aiMode.SelectedIndex = -1;
+                aiTreeDepth.Value = 1;
+
+                UpdateGUI();
 
                 string line;
                 while ((line = file.ReadLine()) != null)
                 {
-                    throw new NotImplementedException();
+                    String first, second;
+
+                    if (Char.IsDigit(line[0]))          // first is digit
+                    {
+                        first = line[0].ToString();
+                        if (Char.IsDigit(line[1]))
+                        {
+                            first += line[1].ToString();
+                            second = line.Substring(2);
+                        }
+                        else
+                            second = line.Substring(1);
+                    }
+                    else                                // first is letter
+                    {
+                        first = line[0].ToString();
+                        second = line.Substring(1);
+                    }
+
+                    MakeArtificialMouseHoverLine(first, second);
                 }
+
+                canvas.Refresh();
             }
+        }
+
+        private void MakeArtificialMouseHoverLine(string first, string second)
+        {
+            LineBetweenCircles line = new LineBetweenCircles();
+
+            int tmp1, tmp2;
+
+            if (Int32.TryParse(first, out tmp1))                // horizontal line
+            {
+                tmp2 = TranslateLetterToAxis(second[0]);
+
+                line.CoordinateFrom = new VTuple<int, int>(tmp1, tmp2);
+                line.CoordinateTo = new VTuple<int, int>(tmp1, tmp2 + 1);
+            }
+            else                                                // vertical line
+            {
+                tmp1 = TranslateLetterToAxis(first[0]);
+                tmp2 = Int32.Parse(second);
+
+                line.CoordinateFrom = new VTuple<int, int>(tmp1, tmp2);
+                line.CoordinateTo = new VTuple<int, int>(tmp1 + 1, tmp2);
+            }
+
+            line.From = (Point)circleCenters[line.CoordinateFrom];
+            line.To = (Point)circleCenters[line.CoordinateTo];
+            line.WhoDrew = currentGame.Turn;
+
+            FinishTurn(line);
         }
 
         #endregion
