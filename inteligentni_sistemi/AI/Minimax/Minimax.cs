@@ -146,7 +146,7 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
                     node.NonExistingLines.Remove(parentNode.NonExistingLines[i]);
 
                     node.Boxes.AddRange(parentNode.Boxes);
-                    List<Box> newBoxes = AICommon.TryClosingBoxes(parentNode.ExistingLines, (node.Player == MinimaxPlayerType.MAX ? Player.BLUE : Player.RED), parentNode.NonExistingLines[i], out int[] notUsed);
+                    List<Box> newBoxes = AICommon.TryClosingBoxes(parentNode.ExistingLines, DeterminePlayerColour(node.Player), parentNode.NonExistingLines[i], out int[] notUsed);
                     node.Boxes.AddRange(newBoxes);
 
                     node.DeltaMove = parentNode.NonExistingLines[i];
@@ -156,7 +156,7 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
                      * unless it the only move
                      */
                     AICommon.TryClosingBoxes(node.ExistingLines,
-                                            (node.Player == MinimaxPlayerType.MAX ? Player.BLUE : Player.RED),
+                                            DeterminePlayerColour(node.Player),
                                             node.DeltaMove,
                                             out int[] surroundingEdges);
 
@@ -173,10 +173,11 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
 
                     bestValue = (bestValue > node.EstimationScore ? bestValue : node.EstimationScore);
                     alpha = (alpha > bestValue ? alpha : bestValue);
-                    /*if (beta <= alpha)
-                        break;*/
 
                     parentNode.Children.Add(node);
+
+                    if (beta <= alpha)
+                        break;
                 }
 
                 parentNode.EstimationScore = bestValue;
@@ -201,7 +202,7 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
                     node.NonExistingLines.Remove(parentNode.NonExistingLines[i]);
 
                     node.Boxes.AddRange(parentNode.Boxes);
-                    List<Box> newBoxes = AICommon.TryClosingBoxes(parentNode.ExistingLines, (node.Player == MinimaxPlayerType.MAX ? Player.BLUE : Player.RED), parentNode.NonExistingLines[i], out int[] notUsed);
+                    List<Box> newBoxes = AICommon.TryClosingBoxes(parentNode.ExistingLines, DeterminePlayerColour(node.Player), parentNode.NonExistingLines[i], out int[] notUsed);
                     node.Boxes.AddRange(newBoxes);
 
                     node.DeltaMove = parentNode.NonExistingLines[i];
@@ -210,8 +211,9 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
                     /* don't go through this subtree if the delta move is drawing third edge
                      * unless it the only move
                      */
+
                     AICommon.TryClosingBoxes(node.ExistingLines,
-                                            (node.Player == MinimaxPlayerType.MAX ? Player.BLUE : Player.RED),
+                                            DeterminePlayerColour(node.Player),
                                             node.DeltaMove,
                                             out int[] surroundingEdges);
 
@@ -225,13 +227,14 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
                     }
 
                     node.EstimationScore = ConstructTree(node, depth + 1, MinimaxPlayerType.MAX, alpha, beta);
-                        
+
                     bestValue = (bestValue < node.EstimationScore ? bestValue : node.EstimationScore);
                     beta = (beta < bestValue ? beta : bestValue);
-                    /*if (beta <= alpha)
-                        break;*/
 
                     parentNode.Children.Add(node);
+
+                    if (beta <= alpha)
+                        break;
                 }
 
                 parentNode.EstimationScore = bestValue;
@@ -239,6 +242,24 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
             }
 
             throw new Exception("Something wrong in minimax happened");
+        }
+
+        private Player DeterminePlayerColour(MinimaxPlayerType minimaxPlayerType)
+        {
+            if (whoAmI == Player.BLUE)
+            {
+                if (minimaxPlayerType == MinimaxPlayerType.MAX)
+                    return Player.BLUE;
+                else
+                    return Player.RED;
+            }
+            else
+            {
+                if (minimaxPlayerType == MinimaxPlayerType.MAX)
+                    return Player.RED;
+                else
+                    return Player.BLUE;
+            }
         }
 
         public LineBetweenCircles GetBestMove()
@@ -271,10 +292,9 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
             }
         }
 
-        protected Player WhoHasMoreBoxes(MinimaxTreeNode node)
+        protected Player WhoHasMoreBoxes(MinimaxTreeNode node, out int blue, out int red)
         {
-            int blue = 0;
-            int red = 0;
+            blue = red = 0;
 
             for (int i = 0; i < node.Boxes.Count; i++)
                 if (node.Boxes[i].ClosingPlayer == Player.BLUE)

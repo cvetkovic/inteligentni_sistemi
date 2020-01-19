@@ -65,11 +65,11 @@
             // 
             // groupBox1
             // 
-            this.groupBox1.Controls.Add(this.redTurnIndicator);
-            this.groupBox1.Controls.Add(this.blueTurnIndicator);
             this.groupBox1.Controls.Add(this.label3);
             this.groupBox1.Controls.Add(this.label2);
             this.groupBox1.Controls.Add(this.scoreLabel);
+            this.groupBox1.Controls.Add(this.blueTurnIndicator);
+            this.groupBox1.Controls.Add(this.redTurnIndicator);
             this.groupBox1.Location = new System.Drawing.Point(618, 12);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Size = new System.Drawing.Size(344, 81);

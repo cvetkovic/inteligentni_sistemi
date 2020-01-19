@@ -18,7 +18,7 @@ namespace etf.dotsandboxes.cl160127d.AI.Minimax
         protected override int EstimationFunction(MinimaxTreeNode node)
         {
             // winning condition for me
-            if (WhoHasMoreBoxes(node) == whoAmI && node.NonExistingLines.Count == 0)
+            if (WhoHasMoreBoxes(node, out int blue, out int red) == whoAmI && node.NonExistingLines.Count == 0)
                 return int.MaxValue;
 
             List<Box> newBoxes = AICommon.TryClosingBoxes(node.ExistingLines, 
