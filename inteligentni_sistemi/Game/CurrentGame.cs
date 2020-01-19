@@ -6,8 +6,9 @@ namespace etf.dotsandboxes.cl160127d.Game
     {
         private int[] score = new int[2];
         private BasePlayer opponent;
+        private BasePlayer opponent2;
 
-        public CurrentGame(int tableSizeX, int tableSizeY, BasePlayer opponent = null)
+        public CurrentGame(int tableSizeX, int tableSizeY, BasePlayer opponent = null, BasePlayer opponent2 = null)
         {
             TableSizeX = tableSizeX;
             TableSizeY = tableSizeY;
@@ -16,6 +17,7 @@ namespace etf.dotsandboxes.cl160127d.Game
 
             score[0] = score[1] = 0;
             this.opponent = opponent;
+            this.opponent2 = opponent2;
         }
 
         public int TableSizeX { get; set; }
@@ -30,6 +32,14 @@ namespace etf.dotsandboxes.cl160127d.Game
             get
             {
                 return opponent;
+            }
+        }
+
+        public BasePlayer Opponent2
+        {
+            get
+            {
+                return opponent2;
             }
         }
     }

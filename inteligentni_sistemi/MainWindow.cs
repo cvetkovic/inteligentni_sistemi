@@ -44,9 +44,13 @@ namespace etf.dotsandboxes.cl160127d
             InitializeComponent();
 
             // TODO: for DEBUG only
-            IntermediateAI intermediateAI = new IntermediateAI(existingCanvasLines, nonExistingLines, boxes, Player.RED, 1);
-            currentGame = new CurrentGame((int)tableSizeX.Value, (int)tableSizeY.Value, intermediateAI);
+            IntermediateAI intermediateAI = new IntermediateAI(existingCanvasLines, nonExistingLines, boxes, Player.RED, 2);
+            IntermediateAI intermediateAI2 = new IntermediateAI(existingCanvasLines, nonExistingLines, boxes, Player.RED, 2);
+
+            currentGame = new CurrentGame((int)tableSizeX.Value, (int)tableSizeY.Value, intermediateAI, intermediateAI2);
+
             intermediateAI.SetCurrentGame(currentGame);
+            intermediateAI2.SetCurrentGame(currentGame);
 
             Logic.CalculateCanvasParameters(currentGame.TableSizeX,
                                             currentGame.TableSizeY,
@@ -55,6 +59,7 @@ namespace etf.dotsandboxes.cl160127d
                                             out horizontalSpacingBetweenCircles, 
                                             out verticalSpacingBetweenCircles, 
                                             out circleDiameter);    // don't remove this
+
             GUI_GameSettingChanged(null, null);
         }
 
@@ -289,6 +294,32 @@ namespace etf.dotsandboxes.cl160127d
             }
         }
 
+        private BasePlayer createOpponent(int aiDifficulty, int aiMode)
+        {
+            if (aiDifficulty == -1)
+            {
+                MessageBox.Show("Težina protivničkog igrača nije izabrana.");
+                return null;
+            }
+            else if (aiMode == -1)
+            {
+                MessageBox.Show("Režim rada protivničkog igrača nije izabran.");
+                return null;
+            }
+
+            switch (aiDifficulty)
+            {
+                case 0:
+                    return new BeginnerAI(existingCanvasLines, nonExistingLines, boxes);
+                case 1:
+                    return new IntermediateAI(existingCanvasLines, nonExistingLines, boxes, Player.RED, (int)aiTreeDepth.Value);
+                case 2:
+                    return new ExpertAI(existingCanvasLines, nonExistingLines, boxes, Player.RED, (int)aiTreeDepth.Value);
+                default:
+                    throw new Exception("Required AI difficulty level doesn't exist.");
+            }
+        }
+
         private void Canvas_MouseClick(object sender, MouseEventArgs e)
         {
             if (currentGame == null)
@@ -296,6 +327,8 @@ namespace etf.dotsandboxes.cl160127d
                 MessageBox.Show("Igra nije započeta!");
                 return;
             }
+            else if (currentGame.Opponent != null && currentGame.Opponent2 != null)
+                return;
 
             if (mouseHoverLine != null && !currentGame.GameOver)
             {
@@ -309,6 +342,9 @@ namespace etf.dotsandboxes.cl160127d
         private void NewGame_Click(object sender, EventArgs e)
         {
             BasePlayer opponent = null;
+            BasePlayer opponent2 = null;
+
+            pcNextStep.Enabled = false;
 
             if (humanVsHumanRadio.Checked)
             {
@@ -316,42 +352,29 @@ namespace etf.dotsandboxes.cl160127d
             }
             else if (humanVsPcRadio.Checked)
             {
-                if (aiDifficulty.SelectedIndex == -1)
-                {
-                    MessageBox.Show("Težina protivničkog igrača nije izabrana.");
-                    return;
-                }
-                else if (aiMode.SelectedIndex == -1)
-                {
-                    MessageBox.Show("Režim rada protivničkog igrača nije izabran.");
-                    return;
-                }
-
-                switch (aiDifficulty.SelectedIndex)
-                {
-                    case 0:
-                        opponent = new BeginnerAI(existingCanvasLines, nonExistingLines, boxes);
-
-                        break;
-                    case 1:
-                        opponent = new IntermediateAI(existingCanvasLines, nonExistingLines, boxes, Player.RED, (int)aiTreeDepth.Value);
-
-                        break;
-                    case 2:
-                        opponent = new ExpertAI(existingCanvasLines, nonExistingLines, boxes, Player.RED, (int)aiTreeDepth.Value);
-
-                        break;
-                    default:
-                        throw new Exception("Required AI difficulty level doesn't exist.");
-                }
+                opponent = createOpponent(aiDifficulty.SelectedIndex, aiMode.SelectedIndex);
+                if (opponent == null)
+                    throw new Exception("Opponent could not be created due to invalid constructino parameters.");
             }
-            else // TODO: make simulation mode (two PCs playing one against another)
-                throw new NotImplementedException();
+            else
+            {
+                opponent = createOpponent(aiDifficulty.SelectedIndex, aiMode.SelectedIndex);
+                opponent2 = createOpponent(aiDifficulty.SelectedIndex, aiMode.SelectedIndex);
+                if (opponent == null || opponent2 == null)
+                    throw new Exception("Opponent(s) could not be created due to invalid constructino parameters.");
+
+                pcNextStep.Enabled = true;
+            }
 
             // creating new game
-            currentGame = new CurrentGame((int)tableSizeX.Value, (int)tableSizeY.Value, opponent);
+            currentGame = new CurrentGame((int)tableSizeX.Value, (int)tableSizeY.Value, opponent, opponent2);
+
+            // this cannot be moved to constructor of current game because object reference can be
+            // retrieved once the constructor has finished
             if (currentGame.Opponent != null)
                 currentGame.Opponent.SetCurrentGame(currentGame);
+            if (currentGame.Opponent2 != null)
+                currentGame.Opponent2.SetCurrentGame(currentGame);
 
             Logic.CalculateCanvasParameters(currentGame.TableSizeX,
                                             currentGame.TableSizeY,
@@ -426,7 +449,7 @@ namespace etf.dotsandboxes.cl160127d
                 UpdateGUI();
                 MessageBox.Show("Igra je završena");
             }
-            else
+            else if (currentGame.Opponent2 == null) // pc vs pc will be handled in other method -> PcNextStep
             {
                 if (currentGame.Turn == Player.BLUE)
                 {
@@ -454,7 +477,14 @@ namespace etf.dotsandboxes.cl160127d
 
                     UpdateGUI();
                 }
+            }
+            else if (currentGame.Opponent != null && currentGame.Opponent2 != null)
+            {
+                if (newBoxes.Count == 0)
+                    SwitchTurn();
 
+                UpdateGUI();
+                canvas.Refresh();
             }
         }
 
@@ -635,6 +665,29 @@ namespace etf.dotsandboxes.cl160127d
             new MinimaxOverview(currentGame.Opponent.GetMinimaxTreeNode(),
                                 currentGame.TableSizeX,
                                 currentGame.TableSizeY).ShowDialog();
+        }
+
+        private void PcNextStep_Click(object sender, EventArgs e)
+        {
+            if (currentGame.GameOver)
+            {
+                UpdateGUI();
+                MessageBox.Show("Igra je završena");
+                return;
+            }
+
+                // in PC vs PC mode
+                if (currentGame.Opponent != null && currentGame.Opponent2 != null)
+            {
+                LineBetweenCircles nextTurn;
+
+                if (currentGame.Turn == Player.BLUE)
+                    nextTurn = currentGame.Opponent.MakeTurn();
+                else
+                    nextTurn = currentGame.Opponent2.MakeTurn();
+
+                FinishTurn(nextTurn);
+            }
         }
     }
 }
