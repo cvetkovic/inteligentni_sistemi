@@ -38,8 +38,6 @@
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.pcNextStep = new System.Windows.Forms.Button();
             this.aiMinimaxTree = new System.Windows.Forms.Button();
-            this.label11 = new System.Windows.Forms.Label();
-            this.aiMode = new System.Windows.Forms.ComboBox();
             this.aiTreeDepth = new System.Windows.Forms.NumericUpDown();
             this.label10 = new System.Windows.Forms.Label();
             this.newGame = new System.Windows.Forms.Button();
@@ -145,8 +143,6 @@
             // 
             this.groupBox2.Controls.Add(this.pcNextStep);
             this.groupBox2.Controls.Add(this.aiMinimaxTree);
-            this.groupBox2.Controls.Add(this.label11);
-            this.groupBox2.Controls.Add(this.aiMode);
             this.groupBox2.Controls.Add(this.aiTreeDepth);
             this.groupBox2.Controls.Add(this.label10);
             this.groupBox2.Controls.Add(this.newGame);
@@ -189,27 +185,6 @@
             this.aiMinimaxTree.Text = "Stablo igre";
             this.aiMinimaxTree.UseVisualStyleBackColor = true;
             this.aiMinimaxTree.Click += new System.EventHandler(this.AiMinimaxTree_Click);
-            // 
-            // label11
-            // 
-            this.label11.AutoSize = true;
-            this.label11.Location = new System.Drawing.Point(7, 202);
-            this.label11.Name = "label11";
-            this.label11.Size = new System.Drawing.Size(62, 17);
-            this.label11.TabIndex = 19;
-            this.label11.Text = "AI režim:";
-            // 
-            // aiMode
-            // 
-            this.aiMode.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.aiMode.FormattingEnabled = true;
-            this.aiMode.Items.AddRange(new object[] {
-            "Korak po korak",
-            "Krajnje stanje"});
-            this.aiMode.Location = new System.Drawing.Point(116, 199);
-            this.aiMode.Name = "aiMode";
-            this.aiMode.Size = new System.Drawing.Size(216, 24);
-            this.aiMode.TabIndex = 18;
             // 
             // aiTreeDepth
             // 
@@ -298,7 +273,6 @@
             // pcVsPcRadio
             // 
             this.pcVsPcRadio.AutoSize = true;
-            this.pcVsPcRadio.Enabled = false;
             this.pcVsPcRadio.Location = new System.Drawing.Point(116, 114);
             this.pcVsPcRadio.Name = "pcVsPcRadio";
             this.pcVsPcRadio.Size = new System.Drawing.Size(145, 21);
@@ -310,7 +284,6 @@
             // humanVsPcRadio
             // 
             this.humanVsPcRadio.AutoSize = true;
-            this.humanVsPcRadio.Enabled = false;
             this.humanVsPcRadio.Location = new System.Drawing.Point(116, 87);
             this.humanVsPcRadio.Name = "humanVsPcRadio";
             this.humanVsPcRadio.Size = new System.Drawing.Size(130, 21);
@@ -332,7 +305,6 @@
             // 
             this.humanVsHumanRadio.AutoSize = true;
             this.humanVsHumanRadio.Checked = true;
-            this.humanVsHumanRadio.Enabled = false;
             this.humanVsHumanRadio.Location = new System.Drawing.Point(116, 60);
             this.humanVsHumanRadio.Name = "humanVsHumanRadio";
             this.humanVsHumanRadio.Size = new System.Drawing.Size(118, 21);
@@ -344,7 +316,6 @@
             // 
             // tableSizeY
             // 
-            this.tableSizeY.Enabled = false;
             this.tableSizeY.Location = new System.Drawing.Point(237, 32);
             this.tableSizeY.Maximum = new decimal(new int[] {
             15,
@@ -377,7 +348,6 @@
             // 
             // tableSizeX
             // 
-            this.tableSizeX.Enabled = false;
             this.tableSizeX.Location = new System.Drawing.Point(116, 32);
             this.tableSizeX.Maximum = new decimal(new int[] {
             15,
@@ -410,6 +380,7 @@
             // 
             // turnRichTextBox
             // 
+            this.turnRichTextBox.Enabled = false;
             this.turnRichTextBox.Location = new System.Drawing.Point(6, 21);
             this.turnRichTextBox.Name = "turnRichTextBox";
             this.turnRichTextBox.Size = new System.Drawing.Size(332, 142);
@@ -479,8 +450,6 @@
         private System.Windows.Forms.Button newGame;
         private System.Windows.Forms.Button loadGameState;
         private System.Windows.Forms.Button saveGameState;
-        private System.Windows.Forms.Label label11;
-        private System.Windows.Forms.ComboBox aiMode;
         private System.Windows.Forms.Button aiMinimaxTree;
         private System.Windows.Forms.Button pcNextStep;
     }

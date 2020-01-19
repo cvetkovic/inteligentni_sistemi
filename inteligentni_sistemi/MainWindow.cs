@@ -14,7 +14,6 @@ namespace etf.dotsandboxes.cl160127d
 {
     public partial class MainWindow : Form
     {
-
         #region Class Variables
 
         // settings
@@ -42,24 +41,27 @@ namespace etf.dotsandboxes.cl160127d
         public MainWindow()
         {
             InitializeComponent();
+            /*
+            #if DEBUG
+                        // TODO: for DEBUG only
+                        IntermediateAI intermediateAI = new IntermediateAI(existingCanvasLines, nonExistingLines, boxes, Player.RED, 2);
+                        IntermediateAI intermediateAI2 = new IntermediateAI(existingCanvasLines, nonExistingLines, boxes, Player.RED, 2);
 
-            // TODO: for DEBUG only
-            IntermediateAI intermediateAI = new IntermediateAI(existingCanvasLines, nonExistingLines, boxes, Player.RED, 2);
-            IntermediateAI intermediateAI2 = new IntermediateAI(existingCanvasLines, nonExistingLines, boxes, Player.RED, 2);
+                        currentGame = new CurrentGame((int)tableSizeX.Value, (int)tableSizeY.Value, intermediateAI, intermediateAI2);
 
-            currentGame = new CurrentGame((int)tableSizeX.Value, (int)tableSizeY.Value, intermediateAI, intermediateAI2);
+                        intermediateAI.SetCurrentGame(currentGame);
+                        intermediateAI2.SetCurrentGame(currentGame);
+                        // end of DEBUG
+            #endif
 
-            intermediateAI.SetCurrentGame(currentGame);
-            intermediateAI2.SetCurrentGame(currentGame);
-
-            Logic.CalculateCanvasParameters(currentGame.TableSizeX,
-                                            currentGame.TableSizeY,
-                                            canvas.Width,
-                                            canvas.Height,
-                                            out horizontalSpacingBetweenCircles, 
-                                            out verticalSpacingBetweenCircles, 
-                                            out circleDiameter);    // don't remove this
-
+                        Logic.CalculateCanvasParameters(currentGame.TableSizeX,
+                                                        currentGame.TableSizeY,
+                                                        canvas.Width,
+                                                        canvas.Height,
+                                                        out horizontalSpacingBetweenCircles, 
+                                                        out verticalSpacingBetweenCircles, 
+                                                        out circleDiameter);    // don't remove this
+            */
             GUI_GameSettingChanged(null, null);
         }
 
@@ -69,6 +71,9 @@ namespace etf.dotsandboxes.cl160127d
 
         private void SaveGameState_Click(object sender, EventArgs e)
         {
+            if (currentGame == null)
+                return;
+
             SaveFileDialog saveFileDialog = new SaveFileDialog();
 
             saveFileDialog.Filter = "Gamesave (*.gs) | *.gs";
@@ -99,8 +104,10 @@ namespace etf.dotsandboxes.cl160127d
         public void UpdateGUI()
         {
             tableSizeX.Enabled = tableSizeY.Enabled = humanVsHumanRadio.Enabled = humanVsPcRadio.Enabled = pcVsPcRadio.Enabled = (currentGame.GameOver);
-            aiDifficulty.Enabled = aiTreeDepth.Enabled = aiMode.Enabled = (currentGame.GameOver);
+            aiDifficulty.Enabled = aiTreeDepth.Enabled = (currentGame.GameOver);
             aiMinimaxTree.Enabled = (!currentGame.GameOver && currentGame.Opponent != null);
+
+            pcNextStep.Enabled = (!currentGame.GameOver && currentGame.Opponent != null && currentGame.Opponent2 != null);
 
             blueTurnIndicator.Visible = (currentGame.Turn == Player.BLUE);
             redTurnIndicator.Visible = (currentGame.Turn == Player.RED);
@@ -114,18 +121,25 @@ namespace etf.dotsandboxes.cl160127d
             {
                 aiDifficulty.Enabled = false;
                 aiTreeDepth.Enabled = false;
-                aiMode.Enabled = false;
+                pcNextStep.Enabled = false;
             }
             else if (humanVsPcRadio.Checked || pcVsPcRadio.Checked)
             {
                 aiDifficulty.Enabled = true;
                 aiTreeDepth.Enabled = true;
-                aiMode.Enabled = true;
+
+                if (pcVsPcRadio.Checked)
+                    pcNextStep.Enabled = true;
+                else
+                    pcNextStep.Enabled = false;
             }
         }
 
         private void Canvas_Paint(object sender, PaintEventArgs e)
         {
+            if (currentGame == null)
+                return;
+
             Graphics g = e.Graphics;
             Brush circleBrush = Brushes.White;
             Pen existingLinePen = new Pen(Brushes.Black, LINE_WIDTH);
@@ -294,16 +308,11 @@ namespace etf.dotsandboxes.cl160127d
             }
         }
 
-        private BasePlayer createOpponent(int aiDifficulty, int aiMode)
+        private BasePlayer CreateOpponent(int aiDifficulty)
         {
             if (aiDifficulty == -1)
             {
                 MessageBox.Show("Težina protivničkog igrača nije izabrana.");
-                return null;
-            }
-            else if (aiMode == -1)
-            {
-                MessageBox.Show("Režim rada protivničkog igrača nije izabran.");
                 return null;
             }
 
@@ -352,16 +361,16 @@ namespace etf.dotsandboxes.cl160127d
             }
             else if (humanVsPcRadio.Checked)
             {
-                opponent = createOpponent(aiDifficulty.SelectedIndex, aiMode.SelectedIndex);
+                opponent = CreateOpponent(aiDifficulty.SelectedIndex);
                 if (opponent == null)
-                    throw new Exception("Opponent could not be created due to invalid constructino parameters.");
+                    return;
             }
             else
             {
-                opponent = createOpponent(aiDifficulty.SelectedIndex, aiMode.SelectedIndex);
-                opponent2 = createOpponent(aiDifficulty.SelectedIndex, aiMode.SelectedIndex);
+                opponent = CreateOpponent(aiDifficulty.SelectedIndex);
+                opponent2 = CreateOpponent(aiDifficulty.SelectedIndex);
                 if (opponent == null || opponent2 == null)
-                    throw new Exception("Opponent(s) could not be created due to invalid constructino parameters.");
+                    return;
 
                 pcNextStep.Enabled = true;
             }
@@ -408,7 +417,7 @@ namespace etf.dotsandboxes.cl160127d
             else
                 currentGame.Turn = Player.BLUE;
         }
-        
+
         private void FinishTurn(LineBetweenCircles line)
         {
             if (line == null)
@@ -447,6 +456,7 @@ namespace etf.dotsandboxes.cl160127d
             if (currentGame.GameOver)
             {
                 UpdateGUI();
+                GUI_GameSettingChanged(null, null);
                 MessageBox.Show("Igra je završena");
             }
             else if (currentGame.Opponent2 == null) // pc vs pc will be handled in other method -> PcNextStep
@@ -590,7 +600,7 @@ namespace etf.dotsandboxes.cl160127d
                 tableSizeX.Value = sizeX;
                 tableSizeY.Value = sizeY;
                 humanVsHumanRadio.Checked = true;
-                aiDifficulty.SelectedIndex = aiMode.SelectedIndex = -1;
+                aiDifficulty.SelectedIndex = -1;
                 aiTreeDepth.Value = 1;
 
                 UpdateGUI();
@@ -669,15 +679,19 @@ namespace etf.dotsandboxes.cl160127d
 
         private void PcNextStep_Click(object sender, EventArgs e)
         {
+            if (currentGame == null)
+                return;
+
             if (currentGame.GameOver)
             {
                 UpdateGUI();
+                GUI_GameSettingChanged(null, null);
                 MessageBox.Show("Igra je završena");
                 return;
             }
 
-                // in PC vs PC mode
-                if (currentGame.Opponent != null && currentGame.Opponent2 != null)
+            // in PC vs PC mode
+            if (currentGame.Opponent != null && currentGame.Opponent2 != null)
             {
                 LineBetweenCircles nextTurn;
 
