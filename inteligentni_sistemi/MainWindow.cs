@@ -308,7 +308,7 @@ namespace etf.dotsandboxes.cl160127d
             }
         }
 
-        private BasePlayer CreateOpponent(int aiDifficulty)
+        private BasePlayer CreateOpponent(int aiDifficulty, Player color)
         {
             if (aiDifficulty == -1)
             {
@@ -321,9 +321,9 @@ namespace etf.dotsandboxes.cl160127d
                 case 0:
                     return new BeginnerAI(existingCanvasLines, nonExistingLines, boxes);
                 case 1:
-                    return new IntermediateAI(existingCanvasLines, nonExistingLines, boxes, Player.RED, (int)aiTreeDepth.Value);
+                    return new IntermediateAI(existingCanvasLines, nonExistingLines, boxes, color, (int)aiTreeDepth.Value);
                 case 2:
-                    return new ExpertAI(existingCanvasLines, nonExistingLines, boxes, Player.RED, (int)aiTreeDepth.Value);
+                    return new ExpertAI(existingCanvasLines, nonExistingLines, boxes, color, (int)aiTreeDepth.Value);
                 default:
                     throw new Exception("Required AI difficulty level doesn't exist.");
             }
@@ -361,14 +361,14 @@ namespace etf.dotsandboxes.cl160127d
             }
             else if (humanVsPcRadio.Checked)
             {
-                opponent = CreateOpponent(aiDifficulty.SelectedIndex);
+                opponent = CreateOpponent(aiDifficulty.SelectedIndex, Player.RED);
                 if (opponent == null)
                     return;
             }
             else
             {
-                opponent = CreateOpponent(aiDifficulty.SelectedIndex);
-                opponent2 = CreateOpponent(aiDifficulty.SelectedIndex);
+                opponent = CreateOpponent(aiDifficulty.SelectedIndex, Player.BLUE);
+                opponent2 = CreateOpponent(aiDifficulty.SelectedIndex, Player.RED);
                 if (opponent == null || opponent2 == null)
                     return;
 
